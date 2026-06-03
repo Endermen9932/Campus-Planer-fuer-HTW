@@ -78,7 +78,7 @@ class BackgroundRefresh {
       _taskName,
       frequency: frequency,
       constraints: Constraints(networkType: NetworkType.connected),
-      existingWorkPolicy: ExistingWorkPolicy.keep,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
     );
   }
 
