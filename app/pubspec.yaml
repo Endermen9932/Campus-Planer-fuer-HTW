@@ -5,7 +5,7 @@ version: 0.1.0+1
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
-  flutter: ">=3.24.0"
+  flutter: ">=3.32.0"
 
 dependencies:
   flutter:
@@ -18,7 +18,7 @@ dependencies:
   # Zugangsdaten verschlüsselt auf dem Gerät (Keychain/Keystore/libsecret/DPAPI)
   flutter_secure_storage: ^9.2.2
   # Periodischer Hintergrund-Refresh (Android WorkManager / iOS BGTaskScheduler)
-  workmanager: ^0.5.2
+  workmanager: ^0.9.0
   # Lokale Benachrichtigungen bei Stundenplan-Änderungen
   flutter_local_notifications: ^17.2.3
   # Kleiner Key/Value-Speicher für Cache-Hashes
