@@ -199,9 +199,16 @@ class _EventTile extends StatelessWidget {
     final timeFormat = DateFormat('HH:mm');
     final start = event.start?.localValue;
     final end = event.end?.localValue;
-    final time = (start != null && end != null)
-        ? '${timeFormat.format(start)} – ${timeFormat.format(end)}'
-        : '';
+    final String time;
+    if (event.start?.dateOnly ?? false) {
+      time = 'ganztägig';
+    } else if (start != null && end != null) {
+      time = '${timeFormat.format(start)} – ${timeFormat.format(end)}';
+    } else if (start != null) {
+      time = timeFormat.format(start);
+    } else {
+      time = '';
+    }
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
