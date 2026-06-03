@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><title>HTW Berlin LSF – Login</title></head>
+<body>
+  <!-- Ein nicht-Login-Formular, das NICHT erkannt werden darf -->
+  <form name="search" method="get" action="rds?state=wtree">
+    <input type="text" name="q" value="">
+    <input type="submit" name="go" value="Suchen">
+  </form>
+
+  <!-- Das eigentliche Login-Formular mit verschleierten Feldnamen -->
+  <form name="loginform" method="post" action="rds">
+    <input type="hidden" name="asdf2x9" value="qswer">
+    <input type="hidden" name="fdsa7k1" value="rewqs">
+    <input type="text" name="asdf" value="">
+    <input type="password" name="fdsa" value="">
+    <input type="checkbox" name="remember" value="1">
+    <input type="submit" name="submit" value="Anmelden">
+  </form>
+</body>
+</html>

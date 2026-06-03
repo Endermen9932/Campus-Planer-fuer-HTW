@@ -1,0 +1,25 @@
+name: CI
+
+# Testet die Datenschicht (lsf_client) bei jedem Push/PR – läuft schnell und
+# ohne Flutter-SDK, weil lsf_client reines Dart ist.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  lsf_client:
+    name: lsf_client (analyze + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/lsf_client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart analyze --fatal-infos
+      - run: dart test

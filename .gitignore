@@ -1,0 +1,29 @@
+# Dart/Flutter build & tooling
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+*.iml
+
+# Library-Package: Lockfile nicht einchecken
+packages/lsf_client/pubspec.lock
+
+# Generierte Plattform-Ordner werden via `flutter create .` erzeugt
+# (bei Bedarf hier ausnehmen, wenn plattformspezifische Configs eingecheckt werden sollen)
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / lokale Configs
+*.env
+*.keystore
+key.properties
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json

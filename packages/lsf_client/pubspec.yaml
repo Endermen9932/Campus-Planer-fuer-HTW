@@ -1,0 +1,19 @@
+name: lsf_client
+description: >-
+  Plattformunabhängige Dart-Client-Bibliothek für das HTW-Berlin-LSF
+  (HIS/QIS-Server): Login mit verschleiertem Formular, Stundenplan-Abruf,
+  termine/asi-Harvesting und iCal-Parsing. Reines Dart, ohne Flutter.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  http: ^1.2.0
+  html: ^0.15.4
+  meta: ^1.15.0
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^5.0.0
