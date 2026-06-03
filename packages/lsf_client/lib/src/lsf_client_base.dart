@@ -36,7 +36,8 @@ class LsfClient {
     final form = LoginForm.parse(page.body);
     final body = form.buildBody(username, password);
 
-    final response = await _transport.postForm(_resolveAction(form.actionPath), body);
+    final response =
+        await _transport.postForm(_resolveAction(form.actionPath), body);
     if (!looksLoggedIn(response.body)) {
       throw LoginFailedException(
         'Login abgelehnt – Benutzername/Passwort prüfen.',

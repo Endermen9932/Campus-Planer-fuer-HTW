@@ -21,8 +21,9 @@ void callbackDispatcher() {
       final events = await LsfRepository().fetchEvents();
       final changed = await ScheduleDiff.updateAndDetectChange(events);
       if (changed) {
-        await Notifications.instance
-            .showScheduleChanged('Dein Stundenplan hat sich geändert.');
+        await Notifications.instance.showScheduleChanged(
+          'Dein Stundenplan hat sich geändert.',
+        );
       }
       return true;
     } on NotAuthenticatedException {
@@ -48,11 +49,15 @@ class ScheduleDiff {
 
   /// Reihenfolge-unabhängiger Hash über die relevanten Felder.
   static String computeHash(List<ICalEvent> events) {
-    final parts = events
-        .map((e) => '${e.uid}|${e.summary}|${e.start?.value.toIso8601String()}'
-            '|${e.end?.value.toIso8601String()}|${e.location}')
-        .toList()
-      ..sort();
+    final parts =
+        events
+            .map(
+              (e) =>
+                  '${e.uid}|${e.summary}|${e.start?.value.toIso8601String()}'
+                  '|${e.end?.value.toIso8601String()}|${e.location}',
+            )
+            .toList()
+          ..sort();
     return base64Url.encode(utf8.encode(parts.join('\n')));
   }
 }

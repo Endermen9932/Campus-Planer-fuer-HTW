@@ -48,7 +48,8 @@ class ICalParser {
   /// Whitespace (Space oder Tab); dieses wird entfernt und der Rest an die
   /// vorherige Zeile angehängt.
   static List<String> _unfold(String source) {
-    final raw = source.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
+    final raw =
+        source.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
     final out = <String>[];
     for (final line in raw) {
       if (line.isEmpty) continue;
@@ -143,7 +144,8 @@ String unescapeText(String input) {
 /// * `YYYYMMDDTHHMMSSZ`  → UTC
 /// * `YYYYMMDDTHHMMSS`   → floating (lokal, ggf. mit `TZID`-Parameter)
 /// * `YYYYMMDD`          → reines Datum (`VALUE=DATE`)
-ICalDateTime parseICalDate(String value, {Map<String, String> params = const {}}) {
+ICalDateTime parseICalDate(String value,
+    {Map<String, String> params = const {}}) {
   final tzid = params['TZID'];
   final isDateValue = params['VALUE']?.toUpperCase() == 'DATE';
 

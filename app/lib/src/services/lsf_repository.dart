@@ -6,7 +6,7 @@ import 'credential_store.dart';
 /// als HTML-Parsing) und schließt die Session wieder.
 class LsfRepository {
   LsfRepository({CredentialStore? credentials})
-      : _credentials = credentials ?? CredentialStore();
+    : _credentials = credentials ?? CredentialStore();
 
   final CredentialStore _credentials;
 

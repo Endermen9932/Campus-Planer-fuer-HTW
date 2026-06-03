@@ -68,8 +68,9 @@ class IoLsfTransport implements LsfTransport {
             .map((e) =>
                 '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
             .join('&');
-        request.headers.contentType =
-            ContentType('application', 'x-www-form-urlencoded', charset: 'utf-8');
+        request.headers.contentType = ContentType(
+            'application', 'x-www-form-urlencoded',
+            charset: 'utf-8');
         request.write(encoded);
       }
 
@@ -122,7 +123,9 @@ class IoLsfTransport implements LsfTransport {
       bytes.addAll(chunk);
     }
     final charset = response.headers.contentType?.charset?.toLowerCase();
-    if (charset == 'iso-8859-1' || charset == 'latin1' || charset == 'iso8859-1') {
+    if (charset == 'iso-8859-1' ||
+        charset == 'latin1' ||
+        charset == 'iso8859-1') {
       return latin1.decode(bytes);
     }
     return utf8.decode(bytes, allowMalformed: true);

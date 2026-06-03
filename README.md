@@ -5,7 +5,7 @@ Nach dem Login wird der persönliche Stundenplan angezeigt und im Hintergrund
 regelmäßig aktualisiert – mit Benachrichtigung bei Änderungen.
 
 > **Status:** Datenschicht (`packages/lsf_client`) ist implementiert und
-> **getestet** (33 Unit-Tests, Analyzer sauber). Die Flutter-App (`app/`) ist
+> **getestet** (41 Unit-Tests, Analyzer sauber). Die Flutter-App (`app/`) ist
 > ein lauffähiges Gerüst, dem noch die generierten Plattform-Ordner fehlen
 > (siehe [Setup](#setup--build)).
 
@@ -45,7 +45,8 @@ htw_center/
 │       │   ├── ical.dart             # RFC-5545 iCal-Parser  ← goldener Pfad
 │       │   ├── timetable_html.dart   # HTML-Listen-Parser (Best-Effort)
 │       │   └── lsf_client_base.dart  # High-Level-Client
-│       └── test/                     # 33 Unit-Tests gegen Fixtures
+│       ├── example/                  # fetch_timetable.dart – CLI zum Live-Test
+│       └── test/                     # 41 Unit-Tests gegen Fixtures
 └── app/                   # Flutter-App (Android, iOS, Windows, macOS, Linux)
     └── lib/src/
         ├── services/      # CredentialStore, LsfRepository, Background, Notifications
@@ -91,7 +92,7 @@ Verteilung läuft über **TestFlight oder App Store** (Apple Developer Account,
 ```bash
 cd packages/lsf_client
 dart pub get
-dart test          # 33 Tests
+dart test          # 41 Tests
 dart analyze
 ```
 
@@ -168,11 +169,12 @@ Details siehe `docs/` bzw. die Dokumentation im Quellcode.
 - [ ] **HTML-Listen-Parser gegen echtes LSF-HTML validieren.** `parseLessonBlock`
       ist gegen reale Textblöcke getestet; die DOM-Extraktion (`parseTimetable`)
       braucht eine Probe der echten `show=liste`-Seite. Der iCal-Pfad ist die
-      zuverlässige Hauptquelle.
+      zuverlässige Hauptquelle. Live testen mit dem CLI:
+      `LSF_USER=… LSF_PASS=… dart run example/fetch_timetable.dart [KW_JAHR]`.
 - [ ] **Stabile iCal-Abo-URL prüfen:** Falls das HTW-LSF eine tokenisierte
       Kalender-Abo-URL anbietet, könnte man darauf umstellen (kein Login je
       Abruf nötig).
-- [ ] Wochen-Navigation (`CalendarWeek`) in der UI.
+- [x] Wochen-Navigation (`CalendarWeek`) in der UI. ✅
 - [ ] Zeitzonen-Handling für iCal (`package:timezone`) statt floating local.
 - [ ] iOS-Signierung + TestFlight-Pipeline.
 - [ ] App-Icons & Splash.

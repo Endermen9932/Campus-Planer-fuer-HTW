@@ -45,11 +45,39 @@ class CalendarWeek {
     return CalendarWeek(int.parse(parts[0]), int.parse(parts[1]));
   }
 
+  /// Aktuelle Kalenderwoche (lokale Zeit).
+  factory CalendarWeek.current() => CalendarWeek.fromDate(DateTime.now());
+
+  /// ISO-8601-Kalenderwoche für ein Datum (die Woche mit dem ersten Donnerstag
+  /// des Jahres ist Woche 1).
+  factory CalendarWeek.fromDate(DateTime date) {
+    final d = DateTime.utc(date.year, date.month, date.day);
+    final nearestThursday = d.add(Duration(days: 4 - d.weekday));
+    final yearStart = DateTime.utc(nearestThursday.year, 1, 1);
+    final weekNo = nearestThursday.difference(yearStart).inDays ~/ 7 + 1;
+    return CalendarWeek(weekNo, nearestThursday.year);
+  }
+
   final int week;
   final int year;
 
   /// LSF-Parameterwert, z.B. `"23_2026"`.
   String get param => '${week}_$year';
+
+  /// Donnerstag dieser ISO-Woche – eindeutig im korrekten Jahr.
+  DateTime get _thursday {
+    final jan4 = DateTime.utc(year, 1, 4); // liegt immer in Woche 1
+    final week1Thursday = jan4.add(Duration(days: 4 - jan4.weekday));
+    return week1Thursday.add(Duration(days: (week - 1) * 7));
+  }
+
+  /// Nächste Woche (über Jahresgrenzen hinweg korrekt).
+  CalendarWeek get next =>
+      CalendarWeek.fromDate(_thursday.add(const Duration(days: 7)));
+
+  /// Vorige Woche.
+  CalendarWeek get previous =>
+      CalendarWeek.fromDate(_thursday.subtract(const Duration(days: 7)));
 
   @override
   bool operator ==(Object other) =>

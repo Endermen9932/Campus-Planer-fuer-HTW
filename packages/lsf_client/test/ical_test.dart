@@ -71,7 +71,8 @@ void main() {
       expect(d.value, DateTime.utc(2026, 6, 3, 7, 45));
     });
     test('floating mit tzid', () {
-      final d = parseICalDate('20260601T113000', params: {'TZID': 'Europe/Berlin'});
+      final d =
+          parseICalDate('20260601T113000', params: {'TZID': 'Europe/Berlin'});
       expect(d.isUtc, isFalse);
       expect(d.tzid, 'Europe/Berlin');
       expect(d.value, DateTime(2026, 6, 1, 11, 30));
@@ -82,8 +83,8 @@ void main() {
       expect(d.value, DateTime(2026, 5, 25));
     });
     test('wirft bei Müll', () {
-      expect(() => parseICalDate('not-a-date'),
-          throwsA(isA<LsfParseException>()));
+      expect(
+          () => parseICalDate('not-a-date'), throwsA(isA<LsfParseException>()));
     });
   });
 }

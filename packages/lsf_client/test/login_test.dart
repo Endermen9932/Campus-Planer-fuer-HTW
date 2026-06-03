@@ -38,22 +38,22 @@ void main() {
     });
 
     test('wirft, wenn kein Login-Formular vorhanden', () {
-      expect(() => LoginForm.parse('<html><form><input name="x"></form></html>'),
+      expect(
+          () => LoginForm.parse('<html><form><input name="x"></form></html>'),
           throwsA(isA<LoginFailedException>()));
     });
   });
 
   group('looksLoggedIn', () {
     test('true bei asi-Token / Logout-Link', () {
+      expect(looksLoggedIn('<a href="rds?asi=abc123.def">x</a>'), isTrue);
       expect(
-          looksLoggedIn('<a href="rds?asi=abc123.def">x</a>'), isTrue);
-      expect(
-          looksLoggedIn('<a href="rds?state=user&category=auth.logout">Abmelden</a>'),
+          looksLoggedIn(
+              '<a href="rds?state=user&category=auth.logout">Abmelden</a>'),
           isTrue);
     });
     test('false bei Fehlermeldung', () {
-      expect(
-          looksLoggedIn('<p>Anmeldung fehlgeschlagen</p> asi=x'), isFalse);
+      expect(looksLoggedIn('<p>Anmeldung fehlgeschlagen</p> asi=x'), isFalse);
     });
     test('false bei nackter Login-Seite', () {
       expect(looksLoggedIn('<form><input type="password"></form>'), isFalse);

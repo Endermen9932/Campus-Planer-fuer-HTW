@@ -20,8 +20,8 @@ class LsfEndpoints {
   Uri loginPage() => _build({'state': 'user', 'type': '1'});
 
   /// Logout.
-  Uri logout() =>
-      _build({'state': 'user', 'type': '4', 're': 'last', 'category': 'auth.logout'});
+  Uri logout() => _build(
+      {'state': 'user', 'type': '4', 're': 'last', 'category': 'auth.logout'});
 
   /// Semesterwechsel.
   Uri switchSemester(Semester semester) => _build({

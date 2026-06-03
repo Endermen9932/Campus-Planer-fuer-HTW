@@ -11,5 +11,4 @@ export 'src/login.dart' show LoginForm, looksLoggedIn;
 export 'src/lsf_client_base.dart' show LsfClient;
 export 'src/models.dart';
 export 'src/timetable_html.dart' show TimetableHtmlParser;
-export 'src/transport.dart'
-    show IoLsfTransport, LsfResponse, LsfTransport;
+export 'src/transport.dart' show IoLsfTransport, LsfResponse, LsfTransport;

@@ -7,16 +7,34 @@ enum LoadState { idle, loading, ready, error }
 
 /// Hält den Zustand der Stundenplan-Ansicht und lädt die Daten via Repository.
 class TimetableController extends ChangeNotifier {
-  TimetableController({LsfRepository? repository})
-      : _repository = repository ?? LsfRepository();
+  TimetableController({LsfRepository? repository, CalendarWeek? initialWeek})
+    : _repository = repository ?? LsfRepository(),
+      week = initialWeek ?? CalendarWeek.current();
 
   final LsfRepository _repository;
 
+  /// Aktuell angezeigte Woche.
+  CalendarWeek week;
   LoadState state = LoadState.idle;
   List<ICalEvent> events = const [];
   String? errorMessage;
 
-  Future<void> load({CalendarWeek? week}) async {
+  Future<void> nextWeek() {
+    week = week.next;
+    return load();
+  }
+
+  Future<void> previousWeek() {
+    week = week.previous;
+    return load();
+  }
+
+  Future<void> goToCurrentWeek() {
+    week = CalendarWeek.current();
+    return load();
+  }
+
+  Future<void> load() async {
     state = LoadState.loading;
     errorMessage = null;
     notifyListeners();

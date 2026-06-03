@@ -22,7 +22,8 @@ void main() {
     });
 
     test('14-täglich, Umlaute im Typ', () {
-      const block = 'K22 Fortgeschrittene Algorithmen und Programmierung (PCÜ)\n'
+      const block =
+          'K22 Fortgeschrittene Algorithmen und Programmierung (PCÜ)\n'
           '2 SWS   deutsch\n'
           'Mittwoch,  09:45 - 13:00 , 14tägl\n'
           'PC-Übung, Raum: WH F 225';

@@ -94,7 +94,17 @@ class TimetableHtmlParser {
   }
 
   static const _blockTags = {
-    'br', 'p', 'div', 'tr', 'li', 'table', 'ul', 'ol', 'h1', 'h2', 'h3',
+    'br',
+    'p',
+    'div',
+    'tr',
+    'li',
+    'table',
+    'ul',
+    'ol',
+    'h1',
+    'h2',
+    'h3',
   };
 
   static void _walk(Node node, StringBuffer out) {

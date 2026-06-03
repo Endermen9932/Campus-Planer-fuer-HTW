@@ -61,9 +61,21 @@ class _TimetableScreenState extends State<TimetableScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => _controller.load(),
-        child: _buildBody(),
+      body: Column(
+        children: [
+          _WeekBar(
+            week: _controller.week,
+            onPrevious: _controller.previousWeek,
+            onNext: _controller.nextWeek,
+            onToday: _controller.goToCurrentWeek,
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => _controller.load(),
+              child: _buildBody(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -86,6 +98,54 @@ class _TimetableScreenState extends State<TimetableScreen> {
         }
         return _EventList(events: _controller.events);
     }
+  }
+}
+
+/// Leiste zum Blättern zwischen Kalenderwochen.
+class _WeekBar extends StatelessWidget {
+  const _WeekBar({
+    required this.week,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onToday,
+  });
+
+  final CalendarWeek week;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onToday;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              tooltip: 'Vorige Woche',
+              onPressed: onPrevious,
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'KW ${week.week} · ${week.year}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              tooltip: 'Nächste Woche',
+              onPressed: onNext,
+            ),
+            TextButton(onPressed: onToday, child: const Text('Heute')),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -115,9 +175,12 @@ class _EventList extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Text(day,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold)),
+              child: Text(
+                day,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
             ),
             ...dayEvents.map((e) => _EventTile(event: e)),
           ],
@@ -144,9 +207,10 @@ class _EventTile extends StatelessWidget {
       child: ListTile(
         title: Text(event.summary ?? 'Veranstaltung'),
         subtitle: Text(
-          [time, if (event.location != null) event.location!]
-              .where((s) => s.isNotEmpty)
-              .join('  ·  '),
+          [
+            time,
+            if (event.location != null) event.location!,
+          ].where((s) => s.isNotEmpty).join('  ·  '),
         ),
       ),
     );
@@ -168,7 +232,10 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          FilledButton(onPressed: onRetry, child: const Text('Erneut versuchen')),
+          FilledButton(
+            onPressed: onRetry,
+            child: const Text('Erneut versuchen'),
+          ),
         ],
       ),
     );
