@@ -114,7 +114,24 @@ flutter build windows --release    # Windows
 flutter build macos --release      # macOS
 flutter build ios --release        # iOS (Signierung nötig)
 ```
-CI (`.github/workflows/build.yml`) baut alle fünf Plattformen automatisch.
+**CI-Workflows:**
+- `ci.yml` – testet die Datenschicht (Dart) bei jedem Push/PR.
+- `pr-build.yml` – baut bei **jedem Pull Request** APK, `.deb` und Windows-Build
+  als herunterladbare Artefakte (siehe unten).
+- `build.yml` – Release-Build aller fünf Plattformen (Tag `v*` oder manuell).
+
+### Test-Builds bei jedem Pull Request herunterladen
+`pr-build.yml` erzeugt bei jedem PR drei Artefakte. So testest du sie:
+1. PR öffnen → Reiter **Checks** (bzw. **Actions** → der „PR-Builds"-Lauf).
+2. Unten unter **Artifacts**: `htw-center-apk`, `htw-center-deb` oder
+   `htw-center-windows` herunterladen (GitHub liefert sie als ZIP).
+3. APK auf Android sideloaden · `.deb` via `sudo dpkg -i …` installieren ·
+   Windows-ZIP entpacken und `htw_center.exe` starten.
+
+> Die nativen Plattform-Ordner werden in CI per `flutter create` erzeugt; für
+> Android macht `tools/ci/enable_android_desugaring.sh` den
+> `flutter_local_notifications`-Build lauffähig. Sobald du die Plattform-Ordner
+> einmal lokal erzeugst und committest, kannst du diese Schritte entfernen.
 
 ### .deb aus dem Linux-Bundle
 `flutter build linux` erzeugt ein Bundle; das mitgelieferte Skript verpackt es

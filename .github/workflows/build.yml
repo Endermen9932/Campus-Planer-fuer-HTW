@@ -1,8 +1,8 @@
 name: Build (alle Plattformen)
 
-# Baut die App für alle fünf Zielplattformen. Wird manuell oder per Tag
-# ausgelöst. Voraussetzung: die nativen Plattform-Ordner existieren (einmalig
-# `cd app && flutter create .` ausführen und committen) – siehe README.
+# Baut die App für alle fünf Zielplattformen (Release). Wird manuell oder per
+# Tag ausgelöst. Plattform-Ordner werden – falls nicht eingecheckt – per
+# `flutter create` erzeugt. Für herunterladbare PR-Test-Builds siehe pr-build.yml.
 
 on:
   workflow_dispatch:
@@ -25,6 +25,11 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
+      - name: Plattform-Ordner erzeugen
+        run: flutter create --platforms=android .
+        working-directory: app
+      - name: Desugaring aktivieren (flutter_local_notifications)
+        run: bash tools/ci/enable_android_desugaring.sh app/android
       - run: flutter pub get
         working-directory: app
       - run: flutter build apk --release
@@ -44,6 +49,9 @@ jobs:
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
       - run: flutter config --enable-linux-desktop
+      - name: Plattform-Ordner erzeugen
+        run: flutter create --platforms=linux .
+        working-directory: app
       - run: flutter pub get
         working-directory: app
       - run: flutter build linux --release
@@ -63,6 +71,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
+      - name: Plattform-Ordner erzeugen
+        run: flutter create --platforms=windows .
+        working-directory: app
       - run: flutter pub get
         working-directory: app
       - run: flutter build windows --release
@@ -80,6 +91,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
+      - name: Plattform-Ordner erzeugen
+        run: flutter create --platforms=macos .
+        working-directory: app
       - run: flutter pub get
         working-directory: app
       - run: flutter build macos --release
@@ -97,6 +111,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
+      - name: Plattform-Ordner erzeugen
+        run: flutter create --platforms=ios .
+        working-directory: app
       - run: flutter pub get
         working-directory: app
       # Ohne Signierung; für TestFlight/App Store werden Apple-Zertifikate +
