@@ -1,0 +1,11 @@
+Package: htw-center
+Version: @VERSION@
+Section: education
+Priority: optional
+Architecture: @ARCH@
+Depends: libgtk-3-0, libsecret-1-0
+Maintainer: endermen9932 <noreply@users.noreply.github.com>
+Description: Stundenplan-App für die HTW Berlin (LSF)
+ Zeigt den persönlichen Stundenplan der HTW Berlin nach dem Login an und
+ aktualisiert ihn im Hintergrund. Zugangsdaten bleiben verschlüsselt auf dem
+ Gerät (libsecret). Inoffizielles Projekt, keine Verbindung zur HTW Berlin.

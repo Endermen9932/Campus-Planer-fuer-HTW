@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=HTW Center
+Comment=HTW Berlin Stundenplan
+Exec=htw-center
+Icon=htw-center
+Categories=Education;Utility;
+Terminal=false
+StartupWMClass=htw_center

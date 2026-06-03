@@ -48,12 +48,12 @@ jobs:
         working-directory: app
       - run: flutter build linux --release
         working-directory: app
-      # Aus dem Bundle ein .deb bauen: z.B. via `flutter_to_debian` oder eigenem
-      # control-File. Hier wird zunächst das Bundle als Artefakt hochgeladen.
+      - name: Paketieren als .deb
+        run: bash packaging/linux/build_deb.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: htw-center-linux-bundle
-          path: app/build/linux/x64/release/bundle/
+          name: htw-center-linux-deb
+          path: build/deb/*.deb
 
   windows:
     name: Windows (.exe)

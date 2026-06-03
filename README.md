@@ -117,10 +117,15 @@ flutter build ios --release        # iOS (Signierung nötig)
 CI (`.github/workflows/build.yml`) baut alle fünf Plattformen automatisch.
 
 ### .deb aus dem Linux-Bundle
-`flutter build linux` erzeugt ein Bundle unter
-`build/linux/x64/release/bundle/`. Daraus ein `.deb` z.B. mit
-[`flutter_to_debian`](https://pub.dev/packages/flutter_to_debian) oder einem
-eigenen `DEBIAN/control` + `dpkg-deb --build`.
+`flutter build linux` erzeugt ein Bundle; das mitgelieferte Skript verpackt es
+als `.deb`:
+```bash
+cd app && flutter build linux --release && cd ..
+bash packaging/linux/build_deb.sh 0.1.0 amd64   # -> build/deb/htw-center_0.1.0_amd64.deb
+```
+Das Skript (`packaging/linux/`) installiert nach `/opt/htw-center`, legt einen
+`/usr/bin`-Launcher und einen Desktop-Eintrag an. In CI (`build.yml`) läuft es
+automatisch.
 
 ---
 
