@@ -5,7 +5,7 @@ Nach dem Login wird der persönliche Stundenplan angezeigt und im Hintergrund
 regelmäßig aktualisiert – mit Benachrichtigung bei Änderungen.
 
 > **Status:** Datenschicht (`packages/lsf_client`) ist implementiert und
-> **getestet** (46 Unit-Tests, Analyzer sauber). Die Flutter-App (`app/`) ist
+> **getestet** (48 Unit-Tests, Analyzer sauber). Die Flutter-App (`app/`) ist
 > ein lauffähiges Gerüst, dem noch die generierten Plattform-Ordner fehlen
 > (siehe [Setup](#setup--build)).
 
@@ -46,7 +46,7 @@ htw_center/
 │       │   ├── timetable_html.dart   # HTML-Listen-Parser (Best-Effort)
 │       │   └── lsf_client_base.dart  # High-Level-Client
 │       ├── example/                  # fetch_timetable.dart – CLI zum Live-Test
-│       └── test/                     # 46 Unit-Tests gegen Fixtures
+│       └── test/                     # 48 Unit-Tests gegen Fixtures
 └── app/                   # Flutter-App (Android, iOS, Windows, macOS, Linux)
     └── lib/src/
         ├── services/      # CredentialStore, LsfRepository, Background, Notifications
@@ -92,7 +92,7 @@ Verteilung läuft über **TestFlight oder App Store** (Apple Developer Account,
 ```bash
 cd packages/lsf_client
 dart pub get
-dart test          # 46 Tests
+dart test          # 48 Tests
 dart analyze
 ```
 
@@ -180,7 +180,7 @@ Details siehe `docs/` bzw. die Dokumentation im Quellcode.
       Kalender-Abo-URL anbietet, könnte man darauf umstellen (kein Login je
       Abruf nötig).
 - [x] Wochen-Navigation (`CalendarWeek`) in der UI. ✅
-- [ ] Zeitzonen-Handling für iCal (`package:timezone`) statt floating local.
+- [ ] Volle TZID-Umrechnung via `package:timezone` (UTC→lokal ist bereits erledigt).
 - [ ] iOS-Signierung + TestFlight-Pipeline.
 - [ ] App-Icons & Splash.
 

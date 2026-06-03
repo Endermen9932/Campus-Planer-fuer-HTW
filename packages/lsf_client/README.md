@@ -46,7 +46,7 @@ LSF_USER=dein-login LSF_PASS=dein-passwort \
 
 ```bash
 dart pub get
-dart test       # 46 Unit-Tests gegen Fixtures
+dart test       # 48 Unit-Tests gegen Fixtures
 dart analyze
 ```
 

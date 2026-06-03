@@ -159,7 +159,7 @@ class _EventList extends StatelessWidget {
     final byDay = <String, List<ICalEvent>>{};
     final dayFormat = DateFormat('EEEE, d. MMMM', 'de');
     for (final e in events) {
-      final start = e.start?.value;
+      final start = e.start?.localValue;
       final key = start != null ? dayFormat.format(start) : 'Ohne Datum';
       byDay.putIfAbsent(key, () => []).add(e);
     }
@@ -197,8 +197,8 @@ class _EventTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeFormat = DateFormat('HH:mm');
-    final start = event.start?.value;
-    final end = event.end?.value;
+    final start = event.start?.localValue;
+    final end = event.end?.localValue;
     final time = (start != null && end != null)
         ? '${timeFormat.format(start)} – ${timeFormat.format(end)}'
         : '';

@@ -177,6 +177,14 @@ class ICalDateTime {
   /// (z.B. via `package:timezone`).
   final String? tzid;
 
+  /// Wert als lokale Wandzeit fürs Anzeigen:
+  /// * UTC-Werte (`Z`) werden in die Gerätezeitzone umgerechnet,
+  /// * floating-Werte werden unverändert als lokale Wandzeit interpretiert.
+  ///
+  /// Hinweis: Eine vollständige TZID-Umrechnung (z.B. `Europe/Berlin` auf einem
+  /// Gerät in einer anderen Zeitzone) erfordert `package:timezone`.
+  DateTime get localValue => isUtc ? value.toLocal() : value;
+
   @override
   String toString() =>
       'ICalDateTime($value${isUtc ? 'Z' : ''}${tzid != null ? ' [$tzid]' : ''})';

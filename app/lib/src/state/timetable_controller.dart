@@ -41,8 +41,8 @@ class TimetableController extends ChangeNotifier {
     try {
       final fetched = await _repository.fetchEvents(week: week);
       fetched.sort((a, b) {
-        final ad = a.start?.value;
-        final bd = b.start?.value;
+        final ad = a.start?.localValue;
+        final bd = b.start?.localValue;
         if (ad == null || bd == null) return 0;
         return ad.compareTo(bd);
       });

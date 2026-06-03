@@ -87,4 +87,17 @@ void main() {
           () => parseICalDate('not-a-date'), throwsA(isA<LsfParseException>()));
     });
   });
+
+  group('ICalDateTime.localValue', () {
+    test('UTC wird in lokale Zeit umgerechnet', () {
+      final utc = parseICalDate('20260603T074500Z');
+      expect(utc.localValue, DateTime.utc(2026, 6, 3, 7, 45).toLocal());
+      expect(utc.localValue.isUtc, isFalse);
+    });
+    test('floating bleibt unverändert lokale Wandzeit', () {
+      final floating =
+          parseICalDate('20260601T113000', params: {'TZID': 'Europe/Berlin'});
+      expect(floating.localValue, DateTime(2026, 6, 1, 11, 30));
+    });
+  });
 }
