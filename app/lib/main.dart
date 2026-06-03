@@ -11,8 +11,14 @@ Future<void> main() async {
   // Deutsche Datums-/Wochentagsnamen für intl.
   await initializeDateFormatting('de');
 
-  // Lokale Benachrichtigungen + Hintergrund-Refresh initialisieren.
-  await Notifications.instance.init();
+  // Optionale Plattform-Dienste dürfen den Start nie blockieren (Desktop-
+  // Plugins können Lücken haben). Hintergrund-Refresh ist intern auf
+  // Android/iOS beschränkt.
+  try {
+    await Notifications.instance.init();
+  } catch (_) {
+    // Benachrichtigungen sind optional – ohne sie läuft die App normal weiter.
+  }
   await BackgroundRefresh.init();
 
   runApp(const HtwCenterApp());
