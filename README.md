@@ -1,4 +1,6 @@
-# HTW Center
+# Campus-Planer (Inoffiziell)
+
+> ⚠️ **Unabhängiges Projekt:** Dieses ist ein privates, inoffizielles Projekt ohne offizielle Verbindung zur Hochschule für Technik und Wirtschaft Berlin (HTW Berlin) oder stw.berlin. Es wird weder von der HTW Berlin noch von stw.berlin autorisiert, unterstützt oder verwaltet.
 
 Plattformübergreifende Stundenplan-App für die **HTW Berlin** (LSF / QIS).
 Nach dem Login wird der persönliche Stundenplan angezeigt und im Hintergrund
@@ -209,9 +211,6 @@ Details siehe `docs/` bzw. die Dokumentation im Quellcode.
 
 ---
 
-## Rechtliches
+## Nutzungshinweise
 
-Inoffizielles, privates Projekt – keine Verbindung zur HTW Berlin. Nutzung mit
-den **eigenen** Zugangsdaten für den **eigenen** Stundenplan. Bitte respektiere
-die Nutzungsbedingungen der HTW und vermeide unnötige Last (keine parallelen
-Massen-Requests).
+Bitte nutze die App nur mit deinen **eigenen** Zugangsdaten für deinen **eigenen** Stundenplan. Respektiere die Nutzungsbedingungen der HTW Berlin und vermeide unnötige Last (keine parallelen Massen-Requests).

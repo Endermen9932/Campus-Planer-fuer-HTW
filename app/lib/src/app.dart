@@ -52,7 +52,7 @@ class HtwCenterApp extends StatelessWidget {
             }
 
             return MaterialApp(
-              title: 'HTW Center',
+              title: 'Campus-Planer',
               theme:      buildTheme(lightScheme),
               darkTheme:  buildTheme(darkScheme),
               themeMode:  themeController.mode,
