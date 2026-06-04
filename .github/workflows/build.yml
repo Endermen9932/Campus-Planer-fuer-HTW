@@ -29,6 +29,15 @@ jobs:
       - name: Plattform-Ordner erzeugen
         run: flutter create --platforms=android .
         working-directory: app
+      - name: Keystore einrichten
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/android/app/keystore.jks
+          cat > app/android/key.properties << EOF
+          storeFile=../app/keystore.jks
+          storePassword=${{ secrets.MY_SECRET }}
+          keyPassword=${{ secrets.MY_SECRET }}
+          keyAlias=upload
+          EOF
       - name: Android-Build konfigurieren (Desugaring + R8 + WorkManager-Keep-Regel)
         run: bash tools/ci/enable_android_desugaring.sh app/android
       - run: flutter pub get

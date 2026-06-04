@@ -30,19 +30,9 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
 
-      - name: Generate keystore
+      - name: Keystore einrichten
         run: |
-          keytool -genkey -v -keystore app/android/app/keystore.jks \
-            -alias upload \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass "${{ secrets.MY_SECRET }}" \
-            -keypass "${{ secrets.MY_SECRET }}" \
-            -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"
-
-      - name: Generate key.properties
-        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/android/app/keystore.jks
           cat > app/android/key.properties << EOF
           storeFile=../app/keystore.jks
           storePassword=${{ secrets.MY_SECRET }}
