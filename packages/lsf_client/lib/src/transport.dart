@@ -37,7 +37,7 @@ class IoLsfTransport implements LsfTransport {
   IoLsfTransport({HttpClient? client, this.maxRedirects = 10})
       : _client = client ?? HttpClient() {
     _client.userAgent =
-        'Mozilla/5.0 (compatible; htw-center/0.1; +https://github.com/endermen9932/htw_center)';
+        'Mozilla/5.0 (compatible; HTW Center/0.1; +https://github.com/endermen9932/htw_center)';
   }
 
   final HttpClient _client;
