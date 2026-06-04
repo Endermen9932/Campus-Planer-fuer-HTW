@@ -1,6 +1,7 @@
 import 'package:lsf_client/lsf_client.dart';
 
 import 'credential_store.dart';
+import 'proxy_config.dart';
 
 /// Dünne Hülle um `lsf_client`: loggt ein, holt die Termine via iCal (stabiler
 /// als HTML-Parsing) und schließt die Session wieder.
@@ -31,7 +32,7 @@ class LsfRepository {
   }
 
   Future<T> _withClient<T>(Future<T> Function(LsfClient) action) async {
-    final client = LsfClient();
+    final client = LsfClient(proxyBase: kProxyBase);
     try {
       return await action(client);
     } finally {
