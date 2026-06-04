@@ -24,7 +24,7 @@ jobs:
 
       - name: Generate keystore
         run: |
-          keytool -genkey -v -keystore android/app/keystore.jks \
+          keytool -genkey -v -keystore app/android/app/keystore.jks \
             -alias upload \
             -keyalg RSA \
             -keysize 2048 \
@@ -35,7 +35,7 @@ jobs:
 
       - name: Generate key.properties
         run: |
-          cat > android/key.properties << EOF
+          cat > app/android/key.properties << EOF
           storeFile=../app/keystore.jks
           storePassword=${{ secrets.MY_SECRET }}
           keyPassword=${{ secrets.MY_SECRET }}
@@ -43,16 +43,16 @@ jobs:
           EOF
 
       - name: Get Flutter dependencies
-        run: flutter pub get
+        run: cd app && flutter pub get
 
       - name: Build AAB
-        run: flutter build appbundle --release
+        run: cd app && flutter build appbundle --release
 
       - name: Create and encrypt secure package
         run: |
           mkdir -p temp-secure
-          cp build/app/outputs/bundle/release/app-release.aab temp-secure/
-          cp android/app/keystore.jks temp-secure/
+          cp app/build/app/outputs/bundle/release/app-release.aab temp-secure/
+          cp app/android/app/keystore.jks temp-secure/
           cd temp-secure
           zip -P "${{ secrets.MY_SECRET }}" ../Secure-Release-Package.zip app-release.aab keystore.jks
           cd ..
