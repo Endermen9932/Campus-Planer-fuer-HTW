@@ -15,7 +15,7 @@ void main() {
 
     test('parst Summary und Location', () {
       expect(events[0].summary, 'K12 Mathematik 2 (SL)');
-      expect(events[0].location, 'WH C 351');
+      expect(events[0].location, 'WH Gebäude C 351');
       expect(events[0].uid, '649105@lsf.htw-berlin.de');
     });
 
