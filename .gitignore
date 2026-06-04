@@ -24,6 +24,7 @@ Thumbs.db
 # Secrets / lokale Configs
 *.env
 *.keystore
+*.jks
 key.properties
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json

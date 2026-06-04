@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=HTW Center
-Comment=HTW Berlin Stundenplan
-Exec=htw-center
-Icon=htw-center
+Name=Campus-Planer
+Comment=Inoffizielle Stundenplan-App für die HTW Berlin
+Exec=campus-planer
+Icon=campus-planer
 Categories=Education;Utility;
 Terminal=false
-StartupWMClass=htw_center
+StartupWMClass=campus_planer

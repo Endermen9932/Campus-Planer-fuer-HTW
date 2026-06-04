@@ -98,7 +98,7 @@ class MensaService {
       'https://www.stw.berlin/xhr/speiseplan-wochentag.html';
   static const _resourcesId = '319';
   static const _userAgent =
-      'Mozilla/5.0 (compatible; htw-center/0.1; '
+      'Mozilla/5.0 (compatible; HTW Center/0.1; '
       '+https://github.com/endermen9932/htw_center)';
 
   Future<MensaDay> fetchDay(DateTime date) async {
