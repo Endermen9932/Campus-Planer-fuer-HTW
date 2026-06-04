@@ -28,7 +28,7 @@ jobs:
       - name: Plattform-Ordner erzeugen
         run: flutter create --platforms=android .
         working-directory: app
-      - name: Desugaring aktivieren (flutter_local_notifications)
+      - name: Android-Build konfigurieren (Desugaring + R8 + WorkManager-Keep-Regel)
         run: bash tools/ci/enable_android_desugaring.sh app/android
       - run: flutter pub get
         working-directory: app
