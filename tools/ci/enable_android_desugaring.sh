@@ -109,6 +109,12 @@ fi
 # ---------------------------------------------------------------------------
 PROGUARD_FILE="$ANDROID_DIR/app/proguard-rules.pro"
 
+# Stelle sicher, dass die Datei existiert
+if [ ! -f "$PROGUARD_FILE" ]; then
+  touch "$PROGUARD_FILE"
+  echo "proguard-rules.pro erstellt."
+fi
+
 if grep -q "WorkDatabase_Impl" "$PROGUARD_FILE" 2>/dev/null; then
   echo "WorkManager-Keep-Regel bereits vorhanden."
 else
