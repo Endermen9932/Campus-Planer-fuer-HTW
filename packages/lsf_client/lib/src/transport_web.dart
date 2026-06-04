@@ -15,10 +15,12 @@ LsfTransport createTransport({String proxyBase = ''}) =>
 /// Protokoll:
 ///   Request:  `X-Proxy-Cookie: name=val; name2=val2`  (eigene Jar)
 ///             `X-Proxy-UA: <user-agent>`
-///   Response: `X-Proxy-Set-Cookie: <raw>\n<raw>` (Worker joiniert mehrere)
-///             `X-Proxy-Location: <url>` (bei Redirects, zuverlässiger als Location)
-///   Worker folgt Redirects NICHT (`redirect: 'manual'`) – Dart-Seite folgt manuell,
-///   damit die Jar über jeden Redirect-Hop erhalten bleibt (JSESSIONID nach Login-POST).
+///   Response (Worker gibt IMMER HTTP 200 zurück):
+///             `X-Proxy-Status:     <echter HTTP-Status>`
+///             `X-Proxy-Set-Cookie: <raw>\n<raw>` (Worker joiniert mehrere)
+///             `X-Proxy-Location:   <url>` (bei Redirects)
+///   Redirects: Worker gibt 200 + X-Proxy-Status: 302 → Browser folgt NICHT
+///   automatisch → Dart liest X-Proxy-Status und folgt manuell.
 class WebLsfTransport implements LsfTransport {
   WebLsfTransport({required this.proxyBase, this.maxRedirects = 10})
       : _client = http.Client();
@@ -75,13 +77,15 @@ class WebLsfTransport implements LsfTransport {
       final setCookie = res.headers['x-proxy-set-cookie'];
       if (setCookie != null) _storeCookies(setCookie);
 
-      if (_isRedirect(res.statusCode) && redirectCount < maxRedirects) {
-        final loc =
-            res.headers['x-proxy-location'] ?? res.headers['location'];
+      // Worker gibt immer HTTP 200; echter Status steckt in X-Proxy-Status.
+      final proxyStatus =
+          int.tryParse(res.headers['x-proxy-status'] ?? '') ?? res.statusCode;
+
+      if (_isRedirect(proxyStatus) && redirectCount < maxRedirects) {
+        final loc = res.headers['x-proxy-location'];
         if (loc != null) {
           final next = url.resolve(loc);
-          final keepMethod =
-              res.statusCode == 307 || res.statusCode == 308;
+          final keepMethod = proxyStatus == 307 || proxyStatus == 308;
           return _send(
             keepMethod ? method : 'GET',
             next,
@@ -97,7 +101,7 @@ class WebLsfTransport implements LsfTransport {
               ? latin1.decode(res.bodyBytes)
               : utf8.decode(res.bodyBytes, allowMalformed: true);
 
-      return LsfResponse(statusCode: res.statusCode, body: body, finalUri: url);
+      return LsfResponse(statusCode: proxyStatus, body: body, finalUri: url);
     } on http.ClientException catch (e) {
       throw LsfTransportException('Netzwerkfehler bei $url', cause: e);
     }
