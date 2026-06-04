@@ -7,7 +7,7 @@ UID:649105@lsf.htw-berlin.de
 SUMMARY:1231131 - K12 Mathematik 2 (SL)
 DTSTART;TZID=Europe/Berlin:20260601T113000
 DTEND;TZID=Europe/Berlin:20260601T153000
-LOCATION:WH C 351
+LOCATION:WH Gebäude C - WH Gebäude C 351
 DESCRIPTION:Seminaristischer Lehrvortrag\, Raum: WH C 351. Dozent: Prof.
   Dr. Mustermann
 RRULE:FREQ=WEEKLY;COUNT=15

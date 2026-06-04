@@ -66,7 +66,7 @@ class ICalParser {
     return ICalEvent(
       uid: props['UID']?.value,
       summary: _text(props['SUMMARY'])?.replaceFirst(RegExp(r'^\d+ - '), ''),
-      location: _text(props['LOCATION']),
+      location: _deduplicateLocation(_text(props['LOCATION'])),
       description: _text(props['DESCRIPTION']),
       start: _date(props['DTSTART']),
       end: _date(props['DTEND']),
@@ -76,6 +76,16 @@ class ICalParser {
 
   static String? _text(_Property? p) =>
       p == null ? null : unescapeText(p.value);
+
+  // Entfernt doppelte Raumangaben wie "WH Gebäude C - WH Gebäude C 351" → "WH Gebäude C 351".
+  static String? _deduplicateLocation(String? location) {
+    if (location == null) return null;
+    final sep = location.indexOf(' - ');
+    if (sep < 0) return location;
+    final prefix = location.substring(0, sep);
+    final rest = location.substring(sep + 3);
+    return rest.startsWith(prefix) ? rest : location;
+  }
 
   static ICalDateTime? _date(_Property? p) =>
       p == null ? null : parseICalDate(p.value, params: p.params);
