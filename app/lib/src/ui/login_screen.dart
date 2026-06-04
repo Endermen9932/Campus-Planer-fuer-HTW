@@ -4,23 +4,26 @@ import 'package:lsf_client/lsf_client.dart';
 import '../services/background_refresh.dart';
 import '../services/credential_store.dart';
 import '../services/lsf_repository.dart';
-import 'timetable_screen.dart';
+import '../theme/theme_controller.dart';
+import 'home_shell.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, required this.themeController});
+
+  final ThemeController themeController;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey  = GlobalKey<FormState>();
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  final _store = CredentialStore();
-  final _repo = LsfRepository();
+  final _store    = CredentialStore();
+  final _repo     = LsfRepository();
 
-  bool _busy = false;
+  bool    _busy  = false;
   String? _error;
 
   @override
@@ -33,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
-      _busy = true;
+      _busy  = true;
       _error = null;
     });
     final username = _userCtrl.text.trim();
@@ -44,7 +47,9 @@ class _LoginScreenState extends State<LoginScreen> {
       await BackgroundRefresh.schedule();
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const TimetableScreen()),
+        MaterialPageRoute<void>(
+          builder: (_) => HomeShell(themeController: widget.themeController),
+        ),
       );
     } on LoginFailedException {
       setState(() => _error = 'Benutzername oder Passwort falsch.');
@@ -59,6 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('HTW Berlin – Anmeldung')),
       body: Center(
@@ -71,17 +78,33 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  // HTW-Logo-Platzhalter: Icon in Surface-Container
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.school_outlined,
+                      size: 40,
+                      color: cs.onPrimaryContainer,
+                    ),
+                  ),
+                  Text(
                     'Melde dich mit deinem HTW-LSF-Login an. '
                     'Deine Daten bleiben verschlüsselt auf dem Gerät.',
                     textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                   TextFormField(
                     controller: _userCtrl,
                     decoration: const InputDecoration(
                       labelText: 'Benutzername',
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person_outline),
                     ),
                     autofillHints: const [AutofillHints.username],
                     validator: (v) =>
@@ -93,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Passwort',
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock_outline),
                     ),
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
@@ -102,23 +126,43 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 16),
-                    Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cs.errorContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: cs.onErrorContainer, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: TextStyle(color: cs.onErrorContainer),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
+                    height: 48,
                     child: FilledButton(
                       onPressed: _busy ? null : _submit,
                       child: _busy
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: cs.onPrimary,
+                              ),
                             )
                           : const Text('Anmelden'),
                     ),
