@@ -1,20 +1,23 @@
 /**
  * Cloudflare Worker: transparenter CORS-Proxy für lsf.htw-berlin.de + www.stw.berlin.
  *
- * Protokoll (Dart-Seite ↔ Worker):
- *   Request:  ?url=<URL-encoded target>
- *             X-Proxy-Cookie: name=val; name2=val2   (eigene Dart-Jar)
- *             X-Proxy-UA: <user-agent>
- *   Response: X-Proxy-Set-Cookie: <cookie-zeile>\n<cookie-zeile>  (newline-joined)
- *             X-Proxy-Location: <url>                              (bei Redirects)
+ * WICHTIG: Der Worker folgt alle Redirects intern (redirect: 'manual' im loop),
+ * sammelt dabei Set-Cookie-Header, und gibt NUR die finale Antwort zurück.
+ * Hintergrund: XHR im Browser folgt 30x-Antworten automatisch – direkt zu LSF,
+ * das keine CORS-Header hat. Das würde sofort geblockt.
  *
- * Redirects: Worker folgt NICHT selbst (redirect: 'manual'), damit Dart die
- * Cookies auf jedem Redirect-Hop einfangen kann (JSESSIONID nach Login-POST).
+ * Protokoll (Dart ↔ Worker):
+ *   Request:  ?url=<URL-encoded target>
+ *             X-Proxy-Cookie: name=val; name2=val2   (Dart-eigene Jar)
+ *             X-Proxy-UA:     <user-agent>
+ *   Response: X-Proxy-Set-Cookie: <zeile>\n<zeile>   (alle Cookies über alle Hops)
+ *             X-Proxy-Location: <finale URL>
  *
  * Deploy:  cd worker && npx wrangler deploy
  */
 
 const ALLOW_HOSTS = new Set(['lsf.htw-berlin.de', 'www.stw.berlin']);
+const MAX_REDIRECTS = 10;
 
 function corsHeaders(origin) {
   return {
@@ -39,76 +42,122 @@ export default {
     const targetParam = new URL(request.url).searchParams.get('url');
     if (!targetParam) {
       return new Response('missing url parameter', {
-        status: 400,
-        headers: corsHeaders(origin),
+        status: 400, headers: corsHeaders(origin),
       });
     }
 
     let targetUrl;
-    try {
-      targetUrl = new URL(targetParam);
-    } catch {
+    try { targetUrl = new URL(targetParam); } catch {
       return new Response('invalid url parameter', {
-        status: 400,
-        headers: corsHeaders(origin),
+        status: 400, headers: corsHeaders(origin),
       });
     }
-
     if (!ALLOW_HOSTS.has(targetUrl.hostname)) {
       return new Response(`host not allowed: ${targetUrl.hostname}`, {
-        status: 403,
-        headers: corsHeaders(origin),
+        status: 403, headers: corsHeaders(origin),
       });
     }
 
-    // Upstream-Request aufbauen
-    const fwdHeaders = new Headers();
-    fwdHeaders.set(
-      'User-Agent',
-      request.headers.get('X-Proxy-UA') || 'HTW Center/0.1'
-    );
-    fwdHeaders.set('Accept', request.headers.get('Accept') || 'text/html,*/*');
-
-    const cookie = request.headers.get('X-Proxy-Cookie');
-    if (cookie) fwdHeaders.set('Cookie', cookie);
-
-    let bodyText = null;
-    if (request.method === 'POST') {
-      bodyText = await request.text();
-      fwdHeaders.set(
-        'Content-Type',
-        request.headers.get('Content-Type') ||
-          'application/x-www-form-urlencoded; charset=utf-8'
-      );
+    // Dart-Jar in lokales cookie-Objekt überführen
+    const cookieJar = {};
+    const initCookie = request.headers.get('X-Proxy-Cookie');
+    if (initCookie) {
+      for (const part of initCookie.split(';')) {
+        const trimmed = part.trim();
+        const eq = trimmed.indexOf('=');
+        if (eq > 0) {
+          cookieJar[trimmed.substring(0, eq).trim()] = trimmed.substring(eq + 1).trim();
+        }
+      }
     }
 
-    const upstream = await fetch(targetUrl.toString(), {
-      method: request.method,
-      headers: fwdHeaders,
-      body: bodyText,
-      redirect: 'manual', // Dart folgt manuell, um Cookies pro Hop zu lesen
-    });
+    const proxyUA = request.headers.get('X-Proxy-UA') || 'HTW Center/0.1';
+    const acceptHdr = request.headers.get('Accept') || 'text/html,*/*';
+    let method = request.method;
+    let bodyText = method === 'POST' ? await request.text() : null;
+    const origContentType = request.headers.get('Content-Type') ||
+      'application/x-www-form-urlencoded; charset=utf-8';
+
+    const allSetCookies = [];
+    let currentUrl = targetUrl;
+    let finalResponse = null;
+
+    // Redirects intern abhandeln – Browser sieht niemals eine 30x-Antwort
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const fwdHeaders = new Headers();
+      fwdHeaders.set('User-Agent', proxyUA);
+      fwdHeaders.set('Accept', acceptHdr);
+
+      const cookieStr = Object.entries(cookieJar)
+        .map(([k, v]) => `${k}=${v}`).join('; ');
+      if (cookieStr) fwdHeaders.set('Cookie', cookieStr);
+
+      if (method === 'POST' && bodyText != null) {
+        fwdHeaders.set('Content-Type', origContentType);
+      }
+
+      const upstream = await fetch(currentUrl.toString(), {
+        method,
+        headers: fwdHeaders,
+        body: method === 'POST' ? bodyText : null,
+        redirect: 'manual',
+      });
+
+      // Set-Cookie von diesem Hop sammeln und in lokale Jar eintragen
+      const sc = upstream.headers.getSetCookie
+        ? upstream.headers.getSetCookie()
+        : [upstream.headers.get('set-cookie')].filter(Boolean);
+      for (const line of sc) {
+        allSetCookies.push(line);
+        const first = line.split(';')[0].trim();
+        const eq = first.indexOf('=');
+        if (eq > 0) {
+          cookieJar[first.substring(0, eq)] = first.substring(eq + 1);
+        }
+      }
+
+      const status = upstream.status;
+      if (![301, 302, 303, 307, 308].includes(status)) {
+        finalResponse = upstream;
+        break;
+      }
+
+      const location = upstream.headers.get('Location');
+      if (!location) { finalResponse = upstream; break; }
+
+      const nextUrl = new URL(location, currentUrl);
+      // Redirect nur zu erlaubten Hosts folgen
+      if (!ALLOW_HOSTS.has(nextUrl.hostname)) {
+        finalResponse = upstream;
+        break;
+      }
+
+      currentUrl = nextUrl;
+      // 301/302/303 nach POST → GET (Standard-Browser-Verhalten)
+      if (status !== 307 && status !== 308) {
+        method = 'GET';
+        bodyText = null;
+      }
+    }
+
+    if (!finalResponse) {
+      return new Response('too many redirects', {
+        status: 508, headers: corsHeaders(origin),
+      });
+    }
 
     const outHeaders = new Headers(corsHeaders(origin));
-
-    // Set-Cookie als lesbaren Custom-Header weiterleiten
-    const setCookies = upstream.headers.getSetCookie
-      ? upstream.headers.getSetCookie()
-      : [upstream.headers.get('set-cookie')].filter(Boolean);
-    if (setCookies.length > 0) {
-      outHeaders.set('X-Proxy-Set-Cookie', setCookies.join('\n'));
+    if (allSetCookies.length > 0) {
+      outHeaders.set('X-Proxy-Set-Cookie', allSetCookies.join('\n'));
     }
+    // Finale URL zurückgeben (nach allen Redirects)
+    outHeaders.set('X-Proxy-Location', currentUrl.toString());
 
-    // Location als Custom-Header (Browser liest Location bei 30x ggf. nicht)
-    const location = upstream.headers.get('Location');
-    if (location) outHeaders.set('X-Proxy-Location', location);
+    const ct = finalResponse.headers.get('Content-Type');
+    if (ct) outHeaders.set('Content-Type', ct);
 
-    const contentType = upstream.headers.get('Content-Type');
-    if (contentType) outHeaders.set('Content-Type', contentType);
-
-    // Body-Bytes unverändert durchleiten (latin1 für LSF-Antworten bleibt erhalten)
-    return new Response(upstream.body, {
-      status: upstream.status,
+    return new Response(finalResponse.body, {
+      status: finalResponse.status,
       headers: outHeaders,
     });
   },
