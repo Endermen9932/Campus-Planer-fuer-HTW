@@ -44019,7 +44019,7 @@ var $async$uy=A.T(function(d,e){if(d===1){o.push(e)
 s=p}for(;;)switch(s){case 0:k=t.N
 A.aK7()
 l=A.e([],t.b)
-k=new A.amn("",new A.y9(l),A.u(k,k))
+k=new A.amn("https://lsf-proxy.enderman.workers.dev",new A.y9(l),A.u(k,k))
 m=new A.q1(k,new A.aak(A.fN("https://lsf.htw-berlin.de/qisserver/rds")))
 p=3
 s=6
@@ -44071,7 +44071,7 @@ apM(a){var s=0,r=A.S(t.DQ),q,p=this,o
 var $async$Ac=A.T(function(b,c){if(b===1)return A.P(c,r)
 for(;;)switch(s){case 0:o=B.c.ei(B.j.k(A.qD(a)),4,"0")+"-"+B.c.ei(B.j.k(A.hP(a)),2,"0")+"-"+B.c.ei(B.j.k(A.Br(a)),2,"0")
 s=3
-return A.L(A.ayd("https://www.stw.berlin/xhr/speiseplan-wochentag.html","resources_id=319&date="+o+"&week=","",u.v),$async$Ac)
+return A.L(A.ayd("https://www.stw.berlin/xhr/speiseplan-wochentag.html","resources_id=319&date="+o+"&week=","https://lsf-proxy.enderman.workers.dev",u.v),$async$Ac)
 case 3:q=p.aeK(c,o)
 s=1
 break
