@@ -65,7 +65,7 @@ class ICalParser {
   static ICalEvent _buildEvent(Map<String, _Property> props) {
     return ICalEvent(
       uid: props['UID']?.value,
-      summary: _text(props['SUMMARY']),
+      summary: _text(props['SUMMARY'])?.replaceFirst(RegExp(r'^\d+ - '), ''),
       location: _text(props['LOCATION']),
       description: _text(props['DESCRIPTION']),
       start: _date(props['DTSTART']),
