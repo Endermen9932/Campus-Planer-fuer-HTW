@@ -16,7 +16,8 @@ class LsfClient {
   LsfClient({
     LsfTransport? transport,
     String baseUrl = LsfEndpoints.defaultBaseUrl,
-  })  : _transport = transport ?? IoLsfTransport(),
+    String proxyBase = '',
+  })  : _transport = transport ?? createDefaultTransport(proxyBase: proxyBase),
         _endpoints = LsfEndpoints(baseUrl: baseUrl);
 
   final LsfTransport _transport;
