@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:flutter/widgets.dart';
 import 'package:lsf_client/lsf_client.dart';
@@ -63,8 +64,14 @@ class ScheduleDiff {
 }
 
 class BackgroundRefresh {
+  /// WorkManager unterstützt nur Android & iOS. Auf Desktop (Linux/Windows/
+  /// macOS) gibt es keine Implementierung – dort sind die Aufrufe No-Ops und
+  /// die App aktualisiert nur im Vordergrund (Pull-to-Refresh / beim Öffnen).
+  static bool get isSupported => Platform.isAndroid || Platform.isIOS;
+
   /// Im `main()` aufrufen.
   static Future<void> init() async {
+    if (!isSupported) return;
     await Workmanager().initialize(callbackDispatcher);
   }
 
@@ -73,6 +80,7 @@ class BackgroundRefresh {
   static Future<void> schedule({
     Duration frequency = const Duration(hours: 1),
   }) async {
+    if (!isSupported) return;
     await Workmanager().registerPeriodicTask(
       _taskName,
       _taskName,
@@ -82,5 +90,8 @@ class BackgroundRefresh {
     );
   }
 
-  static Future<void> cancel() => Workmanager().cancelByUniqueName(_taskName);
+  static Future<void> cancel() async {
+    if (!isSupported) return;
+    await Workmanager().cancelByUniqueName(_taskName);
+  }
 }
