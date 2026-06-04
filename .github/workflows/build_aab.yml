@@ -27,9 +27,9 @@ jobs:
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/android/app/keystore.jks
           cat > app/android/key.properties << EOF
           storeFile=../app/keystore.jks
-          storePassword=${{ secrets.MY_SECRET }}
-          keyPassword=${{ secrets.MY_SECRET }}
-          keyAlias=upload
+          storePassword=${{ secrets.STORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
           EOF
 
       - name: Get Flutter dependencies
