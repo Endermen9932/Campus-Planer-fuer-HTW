@@ -6,6 +6,7 @@ import '../services/background_refresh.dart';
 import '../services/credential_store.dart';
 import '../state/timetable_controller.dart';
 import 'login_screen.dart';
+import 'speiseplan_screen.dart';
 
 class TimetableScreen extends StatefulWidget {
   const TimetableScreen({super.key});
@@ -60,6 +61,30 @@ class _TimetableScreenState extends State<TimetableScreen> {
             onPressed: _logout,
           ),
         ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.calendar_today_outlined),
+            selectedIcon: Icon(Icons.calendar_today),
+            label: 'Stundenplan',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.restaurant_outlined),
+            selectedIcon: Icon(Icons.restaurant),
+            label: 'Mensa',
+          ),
+        ],
+        onDestinationSelected: (index) {
+          if (index == 1) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const SpeiseplanScreen(),
+              ),
+            );
+          }
+        },
       ),
       body: Column(
         children: [
