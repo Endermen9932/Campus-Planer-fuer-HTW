@@ -193,8 +193,14 @@ class MensaService {
         .firstWhere((l) => l.isNotEmpty, orElse: () => '');
   }
 
+  // Additivcodes (z.B. "1, 2, A") am Namensanfang entfernen.
+  // stw.berlin schreibt sie in den gleichen Text-Knoten wie den Gerichtnamen.
+  static final _additivPrefix =
+      RegExp(r'^(?:[0-9][a-z]?|[A-Z]{1,2})(?:,\s*(?:[0-9][a-z]?|[A-Z]{1,2}))*\s+');
+
   MensaMeal _parseMeal(Element el) {
-    final name = el.querySelector('.bold')?.text.trim() ?? '';
+    final rawName = el.querySelector('.bold')?.text.trim() ?? '';
+    final name    = rawName.replaceFirst(_additivPrefix, '');
 
     MensaPrices? prices;
     final priceEl = el.querySelector('.col-xs-12.col-md-3');
