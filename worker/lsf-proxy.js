@@ -168,11 +168,17 @@ async function handleRequest(request, origin) {
     out.set('X-Debug-Recv-Cookie', recvCookie.substring(0, 400));
     out.set('X-Debug-Set-Cookie-Keys', pairs.map(p => p.split('=')[0]).join(', '));
 
-    // Cookies in HTML-Body als Kommentar einbetten: Flutter-web BrowserClient
+    // Cookies in HTML-Body als JSON-Kommentar einbetten: Flutter-web BrowserClient
     // kann benutzerdefinierte CORS-Response-Header nicht lesen, der Body ist
-    // aber immer zugänglich. Dart extrahiert und entfernt den Kommentar.
+    // aber immer zugänglich. Dart sucht den Kommentar per indexOf (nicht startsWith),
+    // damit BOM/Whitespace am Anfang kein Problem sind. JSON statt '; '-Format
+    // eliminiert jede Parsing-Ambiguität bei Sonderzeichen in Cookie-Werten.
     if (ct.toLowerCase().includes('text/html') && pairs.length > 0) {
-      const cookieComment = `<!--__PROXY_COOKIES__:${pairs.join('; ')}-->`;
+      const cookieObj = Object.fromEntries(pairs.map(p => {
+        const eq = p.indexOf('=');
+        return [p.substring(0, eq), p.substring(eq + 1)];
+      }));
+      const cookieComment = `<!--__PROXY_COOKIES__:${JSON.stringify(cookieObj)}-->`;
       try {
         const isLatin1 = /charset=(iso-8859-1|latin[- ]?1|iso8859-1)/i.test(ct);
         const htmlText = new TextDecoder(isLatin1 ? 'iso-8859-1' : 'utf-8').decode(responseBody);
@@ -181,7 +187,10 @@ async function handleRequest(request, origin) {
         out.set('Content-Type', isLatin1
           ? 'text/html; charset=utf-8'
           : (ct.includes('charset') ? ct : ct.trimEnd() + '; charset=utf-8'));
-      } catch (_) { /* Injection fehlgeschlagen – Header-Fallback bleibt */ }
+        out.set('X-Debug-Cookie-Injected', '1');
+      } catch (e) {
+        out.set('X-Debug-Cookie-Injected', '0:' + String(e));
+      }
     }
 
     return new Response(responseBody, { status: 200, headers: out });
