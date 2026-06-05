@@ -17,7 +17,7 @@ const CORS = (origin) => ({
   'Access-Control-Allow-Origin': origin || '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, X-Proxy-Cookie, X-Proxy-UA, Accept',
-  'Access-Control-Expose-Headers': 'X-Proxy-Status, X-Proxy-Set-Cookie, X-Proxy-Location',
+  'Access-Control-Expose-Headers': 'X-Proxy-Status, X-Proxy-Set-Cookie, X-Proxy-Location, X-Debug-Recv-Cookie, X-Debug-Set-Cookie-Keys',
   'Access-Control-Max-Age': '86400',
 });
 
@@ -164,6 +164,11 @@ async function handleRequest(request, origin) {
     if (pairs.length > 0) out.set('X-Proxy-Set-Cookie', pairs.join('; '));
     const ct = upstream.headers.get('Content-Type');
     if (ct) out.set('Content-Type', ct);
+
+    // Debug: echo back what cookies Dart sent us (truncated) and what we got back.
+    const recvCookie = request.headers.get('X-Proxy-Cookie') || '';
+    out.set('X-Debug-Recv-Cookie', recvCookie.substring(0, 400));
+    out.set('X-Debug-Set-Cookie-Keys', pairs.map(p => p.split('=')[0]).join(', '));
 
     return new Response(responseBody, { status: 200, headers: out });
 }

@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+// ignore: avoid_print
+import 'dart:developer' as dev;
+
 import 'package:http/http.dart' as http;
 
 import 'exceptions.dart';
@@ -52,6 +55,7 @@ class WebLsfTransport implements LsfTransport {
     Map<String, String>? fields,
     int redirectCount = 0,
   }) async {
+    final sentJarKeys = _jar.keys.join(', ');
     final headers = <String, String>{
       'Accept': 'text/html,*/*',
       'X-Proxy-UA': _ua,
@@ -76,6 +80,18 @@ class WebLsfTransport implements LsfTransport {
 
       final setCookie = res.headers['x-proxy-set-cookie'];
       if (setCookie != null) _storeCookies(setCookie);
+
+      // Debug: show what cookies were sent and what the Worker+LSF saw/set.
+      final dbgRecv = res.headers['x-debug-recv-cookie'];
+      final dbgKeys = res.headers['x-debug-set-cookie-keys'];
+      dev.log(
+        '[LsfTransport] $method ${url.path}'
+        '\n  → jar keys before request: $sentJarKeys'
+        '\n  ← worker echoed X-Proxy-Cookie: $dbgRecv'
+        '\n  ← LSF set-cookie keys: $dbgKeys'
+        '\n  ← jar keys after: ${_jar.keys.join(', ')}',
+        name: 'lsf',
+      );
 
       // Worker gibt immer HTTP 200; echter Status steckt in X-Proxy-Status.
       final proxyStatus =
