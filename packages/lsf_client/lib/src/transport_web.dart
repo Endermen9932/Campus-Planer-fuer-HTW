@@ -100,22 +100,24 @@ class WebLsfTransport implements LsfTransport {
               ? latin1.decode(res.bodyBytes)
               : utf8.decode(res.bodyBytes, allowMalformed: true);
 
-      // Cookies aus HTML-Kommentar extrahieren (primärer Weg, da Flutter-web
-      // BrowserClient benutzerdefinierte CORS-Response-Header nicht liest).
+      // Cookies aus JSON-Kommentar extrahieren. indexOf statt startsWith, damit
+      // BOM/Whitespace am Dokumentanfang kein Problem sind.
       const injPrefix = '<!--__PROXY_COOKIES__:';
-      if (body.startsWith(injPrefix)) {
-        final end = body.indexOf('-->', injPrefix.length);
-        if (end > 0) {
-          _storeCookies(body.substring(injPrefix.length, end));
-          body = body.substring(end + 3);
+      final injStart = body.indexOf(injPrefix);
+      if (injStart >= 0) {
+        final end = body.indexOf('-->', injStart + injPrefix.length);
+        if (end > injStart) {
+          final raw = body.substring(injStart + injPrefix.length, end);
+          _parseProxyCookies(raw);
+          body = body.substring(0, injStart) + body.substring(end + 3);
         }
       }
-      // Header-Fallback (falls CORS-Header doch lesbar sind).
+      // Header-Fallback (falls CORS-Header lesbar sind).
       final setCookieHdr = res.headers['x-proxy-set-cookie'];
       if (setCookieHdr != null) _storeCookies(setCookieHdr);
 
       // ignore: avoid_print
-      print('[LsfTransport]   jar-after=[${_jar.keys.join(', ')}]');
+      print('[LsfTransport]   jar-after=[${_jar.entries.map((e) => "${e.key}=${e.value}").join(", ")}]');
 
       return LsfResponse(statusCode: proxyStatus, body: body, finalUri: url);
     } on http.ClientException catch (e) {
@@ -126,7 +128,18 @@ class WebLsfTransport implements LsfTransport {
   bool _isRedirect(int code) =>
       code == 301 || code == 302 || code == 303 || code == 307 || code == 308;
 
-  // Worker sendet "name=value; name2=value2" ('; '-getrennte name=value-Paare).
+  // Worker sendet Cookies als JSON-Objekt {"name":"value",...}.
+  // Fallback: altes '; '-Format falls JSON-Parse fehlschlägt.
+  void _parseProxyCookies(String raw) {
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      map.forEach((k, v) => _jar[k] = '$v');
+    } catch (_) {
+      _storeCookies(raw);
+    }
+  }
+
+  // Legacy-Format "name=value; name2=value2" (Header-Fallback).
   void _storeCookies(String raw) {
     for (final pair in raw.split('; ')) {
       final eq = pair.indexOf('=');
