@@ -110,12 +110,11 @@ class WebLsfTransport implements LsfTransport {
   bool _isRedirect(int code) =>
       code == 301 || code == 302 || code == 303 || code == 307 || code == 308;
 
-  // Worker joiniert mehrere Set-Cookie-Header per Newline.
+  // Worker sendet "name=value; name2=value2" ('; '-getrennte name=value-Paare).
   void _storeCookies(String raw) {
-    for (final line in raw.split('\n')) {
-      final first = line.split(';').first.trim();
-      final eq = first.indexOf('=');
-      if (eq > 0) _jar[first.substring(0, eq)] = first.substring(eq + 1);
+    for (final pair in raw.split('; ')) {
+      final eq = pair.indexOf('=');
+      if (eq > 0) _jar[pair.substring(0, eq)] = pair.substring(eq + 1);
     }
   }
 

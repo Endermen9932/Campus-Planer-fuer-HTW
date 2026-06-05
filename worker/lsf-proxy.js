@@ -127,7 +127,8 @@ async function handleRequest(request, origin) {
       if (!ALLOW_HOSTS.has(nextUrl.hostname)) {
         const out = new Headers(CORS(origin));
         out.set('X-Proxy-Status', String(upstream.status));
-        if (allSetCookies.length > 0) out.set('X-Proxy-Set-Cookie', allSetCookies.join('\n'));
+        const pairs = allSetCookies.map(c => c.split(';')[0].trim()).filter(Boolean);
+        if (pairs.length > 0) out.set('X-Proxy-Set-Cookie', pairs.join('; '));
         out.set('X-Proxy-Location', loc);
         return new Response(null, { status: 200, headers: out });
       }
@@ -156,7 +157,11 @@ async function handleRequest(request, origin) {
 
     const out = new Headers(CORS(origin));
     out.set('X-Proxy-Status', String(upstream.status));
-    if (allSetCookies.length > 0) out.set('X-Proxy-Set-Cookie', allSetCookies.join('\n'));
+    // Cookies als "name=value; name2=value2" senden – \n ist in HTTP-Header-Werten
+    // verboten und wirft TypeError in Cloudflare Workers (RFC 6265: ';' nicht in
+    // Cookie-Name/-Value erlaubt, daher sicherer Separator).
+    const pairs = allSetCookies.map(c => c.split(';')[0].trim()).filter(Boolean);
+    if (pairs.length > 0) out.set('X-Proxy-Set-Cookie', pairs.join('; '));
     const ct = upstream.headers.get('Content-Type');
     if (ct) out.set('Content-Type', ct);
 
