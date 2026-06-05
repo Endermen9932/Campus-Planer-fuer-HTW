@@ -24,7 +24,19 @@ const CORS = (origin) => ({
 export default {
   async fetch(request) {
     const origin = request.headers.get('Origin') || '*';
+    try {
+      return await handleRequest(request, origin);
+    } catch (err) {
+      console.error('Unhandled worker error:', err);
+      return new Response('worker error: ' + String(err), {
+        status: 500,
+        headers: CORS(origin),
+      });
+    }
+  },
+};
 
+async function handleRequest(request, origin) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS(origin) });
     }
@@ -138,5 +150,4 @@ export default {
     if (ct) out.set('Content-Type', ct);
 
     return new Response(upstream.body, { status: 200, headers: out });
-  },
-};
+}
