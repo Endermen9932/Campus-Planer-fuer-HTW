@@ -105,7 +105,7 @@ class LsfClient {
 
       if (ids.isEmpty) {
         // Prüfen ob die Session abgelaufen ist: kein Logout-Link → nicht auth.
-        final lower = lastBody!.toLowerCase();
+        final lower = lastBody.toLowerCase();
         final hasLogout = lower.contains('category=auth.logout') ||
             (lower.contains('logout') && lower.contains('abmelden'));
         if (!hasLogout) {

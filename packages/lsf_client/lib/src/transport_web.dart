@@ -64,12 +64,10 @@ class WebLsfTransport implements LsfTransport {
       if (method == 'POST') {
         headers['Content-Type'] =
             'application/x-www-form-urlencoded; charset=utf-8';
-        final encoded = fields == null
-            ? null
-            : fields.entries
-                .map((e) =>
-                    '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
-                .join('&');
+        final encoded = fields?.entries
+            .map((e) =>
+                '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+            .join('&');
         res = await _client.post(proxied, headers: headers, body: encoded);
       } else {
         res = await _client.get(proxied, headers: headers);
@@ -104,11 +102,11 @@ class WebLsfTransport implements LsfTransport {
 
       // Cookies aus HTML-Kommentar extrahieren (primärer Weg, da Flutter-web
       // BrowserClient benutzerdefinierte CORS-Response-Header nicht liest).
-      const _injPrefix = '<!--__PROXY_COOKIES__:';
-      if (body.startsWith(_injPrefix)) {
-        final end = body.indexOf('-->', _injPrefix.length);
+      const injPrefix = '<!--__PROXY_COOKIES__:';
+      if (body.startsWith(injPrefix)) {
+        final end = body.indexOf('-->', injPrefix.length);
         if (end > 0) {
-          _storeCookies(body.substring(_injPrefix.length, end));
+          _storeCookies(body.substring(injPrefix.length, end));
           body = body.substring(end + 3);
         }
       }
