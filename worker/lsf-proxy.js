@@ -142,12 +142,23 @@ async function handleRequest(request, origin) {
       currentUrl = nextUrl;
     }
 
-    // Endantwort zusammenstellen
+    // Endantwort zusammenstellen: Body komplett puffern statt streamen,
+    // damit Verbindungsfehler beim Lesen des Upstream-Streams als JS-Exception
+    // sichtbar werden (statt als platform-level 500 ohne CORS-Header).
+    let responseBody;
+    try {
+      responseBody = await upstream.arrayBuffer();
+    } catch (err) {
+      return new Response('body read error: ' + String(err), {
+        status: 502, headers: CORS(origin),
+      });
+    }
+
     const out = new Headers(CORS(origin));
     out.set('X-Proxy-Status', String(upstream.status));
     if (allSetCookies.length > 0) out.set('X-Proxy-Set-Cookie', allSetCookies.join('\n'));
     const ct = upstream.headers.get('Content-Type');
     if (ct) out.set('Content-Type', ct);
 
-    return new Response(upstream.body, { status: 200, headers: out });
+    return new Response(responseBody, { status: 200, headers: out });
 }
