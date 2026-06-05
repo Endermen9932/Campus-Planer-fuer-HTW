@@ -92,14 +92,27 @@ class LsfClient {
       ids = extractTermineIds(listPage.body);
 
       // Fallback: Kalenderansicht (plan view).
+      String? lastBody;
       if (ids.isEmpty) {
         final planPage = await _transport
             .get(_endpoints.timetablePlan(week: week, asi: _asi));
         _asi = extractAsi(planPage.body) ?? _asi;
         ids = extractTermineIds(planPage.body);
+        lastBody = planPage.body;
+      } else {
+        lastBody = listPage.body;
       }
 
       if (ids.isEmpty) {
+        // Prüfen ob die Session abgelaufen ist: kein Logout-Link → nicht auth.
+        final lower = lastBody!.toLowerCase();
+        final hasLogout = lower.contains('category=auth.logout') ||
+            (lower.contains('logout') && lower.contains('abmelden'));
+        if (!hasLogout) {
+          _loggedIn = false;
+          _asi = null;
+          throw NotAuthenticatedException();
+        }
         throw LsfParseException(
           'Keine Termin-IDs auf der Planseite gefunden.',
         );
