@@ -1,8 +1,9 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
+
+import 'mensa_fetch.dart'
+    if (dart.library.html) 'mensa_fetch_web.dart' as fetch;
+import 'proxy_config.dart';
 
 class MensaPrices {
   const MensaPrices({
@@ -104,32 +105,13 @@ class MensaService {
   Future<MensaDay> fetchDay(DateTime date) async {
     final dateStr = _fmtDate(date);
     final postBody = 'resources_id=$_resourcesId&date=$dateStr&week=';
-
-    final client = HttpClient()..userAgent = _userAgent;
-    try {
-      final request = await client.postUrl(Uri.parse(_endpoint));
-      request.headers.contentType = ContentType(
-        'application',
-        'x-www-form-urlencoded',
-        charset: 'utf-8',
-      );
-      request.write(postBody);
-
-      final response = await request.close();
-      if (response.statusCode != 200) {
-        throw MensaFetchException(
-            'Server antwortete mit ${response.statusCode}');
-      }
-
-      final html = await _readBody(response);
-      return _parse(html, dateStr);
-    } on SocketException catch (e) {
-      throw MensaFetchException('Netzwerkfehler', cause: e);
-    } on HttpException catch (e) {
-      throw MensaFetchException('HTTP-Fehler', cause: e);
-    } finally {
-      client.close();
-    }
+    final html = await fetch.postMensaHtml(
+      _endpoint,
+      postBody,
+      userAgent: _userAgent,
+      proxyBase: kProxyBase,
+    );
+    return _parse(html, dateStr);
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
@@ -138,14 +120,6 @@ class MensaService {
       '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
-
-  Future<String> _readBody(HttpClientResponse response) async {
-    final bytes = <int>[];
-    await for (final chunk in response) {
-      bytes.addAll(chunk);
-    }
-    return utf8.decode(bytes, allowMalformed: true);
-  }
 
   MensaDay _parse(String htmlBody, String dateStr) {
     final doc = html_parser.parse(htmlBody);
@@ -193,8 +167,13 @@ class MensaService {
         .firstWhere((l) => l.isNotEmpty, orElse: () => '');
   }
 
+  // Additivcodes (z.B. "1, 2, A") am Namensanfang entfernen.
+  static final _additivPrefix =
+      RegExp(r'^(?:[0-9][a-z]?|[A-Z]{1,2})(?:,\s*(?:[0-9][a-z]?|[A-Z]{1,2}))*\s+');
+
   MensaMeal _parseMeal(Element el) {
-    final name = el.querySelector('.bold')?.text.trim() ?? '';
+    final rawName = el.querySelector('.bold')?.text.trim() ?? '';
+    final name    = rawName.replaceFirst(_additivPrefix, '');
 
     MensaPrices? prices;
     final priceEl = el.querySelector('.col-xs-12.col-md-3');

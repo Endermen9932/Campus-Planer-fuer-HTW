@@ -1,0 +1,56 @@
+name: Build AAB for Play Store
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+
+      - name: Keystore einrichten
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/android/app/keystore.jks
+          cat > app/android/key.properties << EOF
+          storeFile=../app/keystore.jks
+          storePassword=${{ secrets.STORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          EOF
+
+      - name: Get Flutter dependencies
+        run: cd app && flutter pub get
+
+      - name: Build AAB
+        run: cd app && flutter build appbundle --release
+
+      - name: Create and encrypt secure package
+        run: |
+          mkdir -p temp-secure
+          cp app/build/app/outputs/bundle/release/app-release.aab temp-secure/
+          cp app/android/app/keystore.jks temp-secure/
+          cd temp-secure
+          zip -P "${{ secrets.MY_SECRET }}" ../Secure-Release-Package.zip app-release.aab keystore.jks
+          cd ..
+          rm -rf temp-secure
+
+      - name: Upload secure artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Secure-Release-Package
+          path: Secure-Release-Package.zip
+          retention-days: 7

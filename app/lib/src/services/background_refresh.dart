@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lsf_client/lsf_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -67,7 +67,10 @@ class BackgroundRefresh {
   /// WorkManager unterstützt nur Android & iOS. Auf Desktop (Linux/Windows/
   /// macOS) gibt es keine Implementierung – dort sind die Aufrufe No-Ops und
   /// die App aktualisiert nur im Vordergrund (Pull-to-Refresh / beim Öffnen).
-  static bool get isSupported => Platform.isAndroid || Platform.isIOS;
+  static bool get isSupported =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   /// Im `main()` aufrufen.
   static Future<void> init() async {
