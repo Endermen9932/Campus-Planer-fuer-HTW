@@ -36,23 +36,25 @@ class LsfEndpoints {
 
   /// Stundenplan als Listenansicht (`show=liste&P.vx=lang`) – am besten zu
   /// parsen. Ohne [week] liefert der Server die aktuelle Woche.
-  Uri timetableList({CalendarWeek? week}) => _build({
+  Uri timetableList({CalendarWeek? week, String? asi}) => _build({
         'state': 'wplan',
         'act': 'show',
         'show': 'liste',
         'P.vx': 'lang',
         'P.subc': 'plan',
         if (week != null) 'week': week.param,
+        if (asi != null && asi.isNotEmpty) 'asi': asi,
       });
 
   /// Stundenplan als Kalenderansicht (`show=plan`).
-  Uri timetablePlan({CalendarWeek? week}) => _build({
+  Uri timetablePlan({CalendarWeek? week, String? asi}) => _build({
         'state': 'wplan',
         'act': 'show',
         'show': 'plan',
         'P.subc': 'plan',
         'P.vx': 'mittel',
         if (week != null) 'week': week.param,
+        if (asi != null && asi.isNotEmpty) 'asi': asi,
       });
 
   /// iCal-Export für eine Menge von Termin-IDs (NICHT Veranstaltungs-IDs!).

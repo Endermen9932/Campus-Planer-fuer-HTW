@@ -85,9 +85,20 @@ class LsfClient {
     _requireAuth();
     var ids = termineIds;
     if (ids == null || ids.isEmpty) {
-      final page = await _transport.get(_endpoints.timetablePlan(week: week));
-      _asi = extractAsi(page.body) ?? _asi;
-      ids = extractTermineIds(page.body);
+      // Listenansicht zuerst: enthält iCal-Export-Links mit termine=-Parametern.
+      final listPage = await _transport
+          .get(_endpoints.timetableList(week: week, asi: _asi));
+      _asi = extractAsi(listPage.body) ?? _asi;
+      ids = extractTermineIds(listPage.body);
+
+      // Fallback: Kalenderansicht (plan view).
+      if (ids.isEmpty) {
+        final planPage = await _transport
+            .get(_endpoints.timetablePlan(week: week, asi: _asi));
+        _asi = extractAsi(planPage.body) ?? _asi;
+        ids = extractTermineIds(planPage.body);
+      }
+
       if (ids.isEmpty) {
         throw LsfParseException(
           'Keine Termin-IDs auf der Planseite gefunden.',
