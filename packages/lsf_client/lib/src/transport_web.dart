@@ -75,18 +75,8 @@ class WebLsfTransport implements LsfTransport {
         res = await _client.get(proxied, headers: headers);
       }
 
-      final setCookie = res.headers['x-proxy-set-cookie'];
-      if (setCookie != null) _storeCookies(setCookie);
-
-      // Debug: visible in Chrome DevTools console as plain print output.
-      final dbgRecv = res.headers['x-debug-recv-cookie'] ?? '(no debug header – redeploy worker)';
-      final dbgKeys = res.headers['x-debug-set-cookie-keys'] ?? '?';
       // ignore: avoid_print
-      print('[LsfTransport] $method ${url.path}'
-          ' | jar-before=[$sentJarKeys]'
-          ' | worker-recv=[$dbgRecv]'
-          ' | lsf-set-keys=[$dbgKeys]'
-          ' | jar-after=[${_jar.keys.join(', ')}]');
+      print('[LsfTransport] $method ${url.path} | jar-before=[$sentJarKeys]');
 
       // Worker gibt immer HTTP 200; echter Status steckt in X-Proxy-Status.
       final proxyStatus =
@@ -107,10 +97,27 @@ class WebLsfTransport implements LsfTransport {
       }
 
       final ct = (res.headers['content-type'] ?? '').toLowerCase();
-      final body =
+      var body =
           (ct.contains('iso-8859-1') || ct.contains('latin1') || ct.contains('iso8859-1'))
               ? latin1.decode(res.bodyBytes)
               : utf8.decode(res.bodyBytes, allowMalformed: true);
+
+      // Cookies aus HTML-Kommentar extrahieren (primärer Weg, da Flutter-web
+      // BrowserClient benutzerdefinierte CORS-Response-Header nicht liest).
+      const _injPrefix = '<!--__PROXY_COOKIES__:';
+      if (body.startsWith(_injPrefix)) {
+        final end = body.indexOf('-->', _injPrefix.length);
+        if (end > 0) {
+          _storeCookies(body.substring(_injPrefix.length, end));
+          body = body.substring(end + 3);
+        }
+      }
+      // Header-Fallback (falls CORS-Header doch lesbar sind).
+      final setCookieHdr = res.headers['x-proxy-set-cookie'];
+      if (setCookieHdr != null) _storeCookies(setCookieHdr);
+
+      // ignore: avoid_print
+      print('[LsfTransport]   jar-after=[${_jar.keys.join(', ')}]');
 
       return LsfResponse(statusCode: proxyStatus, body: body, finalUri: url);
     } on http.ClientException catch (e) {

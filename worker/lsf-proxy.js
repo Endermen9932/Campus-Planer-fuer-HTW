@@ -157,18 +157,32 @@ async function handleRequest(request, origin) {
 
     const out = new Headers(CORS(origin));
     out.set('X-Proxy-Status', String(upstream.status));
-    // Cookies als "name=value; name2=value2" senden – \n ist in HTTP-Header-Werten
-    // verboten und wirft TypeError in Cloudflare Workers (RFC 6265: ';' nicht in
-    // Cookie-Name/-Value erlaubt, daher sicherer Separator).
+    // Cookies als "name=value; name2=value2" senden.
     const pairs = allSetCookies.map(c => c.split(';')[0].trim()).filter(Boolean);
     if (pairs.length > 0) out.set('X-Proxy-Set-Cookie', pairs.join('; '));
-    const ct = upstream.headers.get('Content-Type');
+    const ct = upstream.headers.get('Content-Type') || '';
     if (ct) out.set('Content-Type', ct);
 
     // Debug: echo back what cookies Dart sent us (truncated) and what we got back.
     const recvCookie = request.headers.get('X-Proxy-Cookie') || '';
     out.set('X-Debug-Recv-Cookie', recvCookie.substring(0, 400));
     out.set('X-Debug-Set-Cookie-Keys', pairs.map(p => p.split('=')[0]).join(', '));
+
+    // Cookies in HTML-Body als Kommentar einbetten: Flutter-web BrowserClient
+    // kann benutzerdefinierte CORS-Response-Header nicht lesen, der Body ist
+    // aber immer zugänglich. Dart extrahiert und entfernt den Kommentar.
+    if (ct.toLowerCase().includes('text/html') && pairs.length > 0) {
+      const cookieComment = `<!--__PROXY_COOKIES__:${pairs.join('; ')}-->`;
+      try {
+        const isLatin1 = /charset=(iso-8859-1|latin[- ]?1|iso8859-1)/i.test(ct);
+        const htmlText = new TextDecoder(isLatin1 ? 'iso-8859-1' : 'utf-8').decode(responseBody);
+        responseBody = new TextEncoder().encode(cookieComment + htmlText);
+        // Neu-Encoding ist UTF-8 → Content-Type aktualisieren.
+        out.set('Content-Type', isLatin1
+          ? 'text/html; charset=utf-8'
+          : (ct.includes('charset') ? ct : ct.trimEnd() + '; charset=utf-8'));
+      } catch (_) { /* Injection fehlgeschlagen – Header-Fallback bleibt */ }
+    }
 
     return new Response(responseBody, { status: 200, headers: out });
 }
