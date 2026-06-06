@@ -38,19 +38,9 @@ jobs:
       - name: Build AAB
         run: cd app && flutter build appbundle --release
 
-      - name: Create and encrypt secure package
-        run: |
-          mkdir -p temp-secure
-          cp app/build/app/outputs/bundle/release/app-release.aab temp-secure/
-          cp app/android/app/keystore.jks temp-secure/
-          cd temp-secure
-          zip -P "${{ secrets.MY_SECRET }}" ../Secure-Release-Package.zip app-release.aab keystore.jks
-          cd ..
-          rm -rf temp-secure
-
-      - name: Upload secure artifact
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: Secure-Release-Package
-          path: Secure-Release-Package.zip
+          name: app-release-aab
+          path: app/build/app/outputs/bundle/release/app-release.aab
           retention-days: 7
