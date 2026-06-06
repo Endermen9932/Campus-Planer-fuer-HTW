@@ -1,7 +1,7 @@
 name: campus_planer
 description: Campus-Planer – inoffizielle Stundenplan-App (LSF) – Android, iOS, Windows, macOS, Linux.
 publish_to: none
-version: 0.1.0+2
+version: 0.1.0+3
 authors:
   - Julian Gippner <endermen9932@users.noreply.github.com>
 
