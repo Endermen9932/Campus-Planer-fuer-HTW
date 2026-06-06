@@ -22,7 +22,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
-          cache: true
 
       # Ergänzt fehlende generierte Web-Dateien (icons/, flutter_bootstrap.js, …)
       # ohne unsere committeten index.html / manifest.json zu überschreiben.

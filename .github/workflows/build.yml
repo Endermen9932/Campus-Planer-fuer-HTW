@@ -48,6 +48,7 @@ jobs:
         with:
           name: htw-center-android
           path: app/build/app/outputs/flutter-apk/*.apk
+          retention-days: 5
 
   linux:
     name: Linux (.deb via Bundle)
@@ -72,6 +73,7 @@ jobs:
         with:
           name: htw-center-linux-deb
           path: build/deb/*.deb
+          retention-days: 5
 
   windows:
     name: Windows (.exe)
@@ -92,6 +94,7 @@ jobs:
         with:
           name: htw-center-windows
           path: app/build/windows/x64/runner/Release/
+          retention-days: 5
 
   macos:
     name: macOS (.app)
@@ -112,6 +115,7 @@ jobs:
         with:
           name: htw-center-macos
           path: app/build/macos/Build/Products/Release/*.app
+          retention-days: 5
 
   ios:
     name: iOS (.app, unsigniert)
@@ -134,3 +138,4 @@ jobs:
         with:
           name: htw-center-ios-unsigned
           path: app/build/ios/iphoneos/Runner.app
+          retention-days: 5

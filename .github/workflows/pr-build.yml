@@ -35,7 +35,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
-          cache: true
       - name: Plattform-Ordner erzeugen
         run: flutter create --platforms=android .
         working-directory: app
@@ -63,6 +62,7 @@ jobs:
         with:
           name: htw-center-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 3
           if-no-files-found: error
 
   linux:
@@ -75,7 +75,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
-          cache: true
       - run: flutter config --enable-linux-desktop
       - name: Plattform-Ordner erzeugen
         run: flutter create --platforms=linux .
@@ -90,6 +89,7 @@ jobs:
         with:
           name: htw-center-deb
           path: build/deb/*.deb
+          retention-days: 3
           if-no-files-found: error
 
   windows:
@@ -100,7 +100,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
-          cache: true
       - name: Plattform-Ordner erzeugen
         run: flutter create --platforms=windows .
         working-directory: app
@@ -112,4 +111,5 @@ jobs:
         with:
           name: htw-center-windows
           path: app/build/windows/x64/runner/Release/
+          retention-days: 3
           if-no-files-found: error
