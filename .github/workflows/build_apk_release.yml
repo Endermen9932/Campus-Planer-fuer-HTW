@@ -1,4 +1,4 @@
-name: Build APK Release
+name: Build APK
 
 on:
   push:
@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    name: Release APK Build
+    name: APK Build
     runs-on: ubuntu-latest
 
     steps:
@@ -29,29 +29,19 @@ jobs:
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
 
-      - name: Keystore einrichten
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/android/app/keystore.jks
-          cat > app/android/key.properties << EOF
-          storeFile=../app/keystore.jks
-          storePassword=${{ secrets.STORE_PASSWORD }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          EOF
-
       - name: Configure Android build (Desugaring + R8)
         run: bash tools/ci/enable_android_desugaring.sh app/android
 
       - name: Get Flutter dependencies
         run: cd app && flutter pub get
 
-      - name: Build Release APK
-        run: cd app && flutter build apk --release
+      - name: Build Debug APK
+        run: cd app && flutter build apk --debug
 
-      - name: Upload Release APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 5
+          name: app-debug-apk
+          path: app/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 1
           if-no-files-found: error
