@@ -2,7 +2,7 @@
 
 ## Android-Version vor jedem Release erhöhen
 
-Vor jedem APK- oder AAB-Build (manuell, per Tag oder Workflow-Dispatch) muss der `versionCode` in `app/pubspec.yaml` erhöht werden:
+Vor jedem APK-Build (manuell oder per Workflow-Dispatch) muss der `versionCode` in `app/pubspec.yaml` erhöht werden:
 
 ```
 version: X.Y.Z+<versionCode>
@@ -16,10 +16,6 @@ Android blockiert sonst die Installation mit `INSTALL_FAILED_VERSION_DOWNGRADE`.
 
 ## Android-Signierung
 
-Alle drei Workflows (`build.yml`, `build_aab.yml`, `build_apk_release.yml`) signieren mit einem persistenten Keystore aus den GitHub Secrets:
-- `KEYSTORE_BASE64` – Keystore-Datei als Base64
-- `KEY_ALIAS` – Key-Alias
-- `KEY_PASSWORD` – Key-Passwort
-- `STORE_PASSWORD` – Store-Passwort
-
-Niemals `keytool -genkey` in den Workflows verwenden – das erzeugt bei jedem Build einen neuen Key und bricht Updates.
+APKs werden mit dem **Android Debug Key** signiert (kein Keystore nötig).
+`build_apk_release.yml` setzt bewusst keinen Keystore ein – `build.gradle.kts`
+greift automatisch auf `signingConfigs.getByName("debug")` zurück.
