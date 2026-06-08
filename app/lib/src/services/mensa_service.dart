@@ -15,6 +15,15 @@ class MensaPrices {
   final double student;
   final double staff;
   final double guest;
+
+  Map<String, dynamic> toJson() =>
+      {'student': student, 'staff': staff, 'guest': guest};
+
+  factory MensaPrices.fromJson(Map<String, dynamic> j) => MensaPrices(
+        student: (j['student'] as num).toDouble(),
+        staff: (j['staff'] as num).toDouble(),
+        guest: (j['guest'] as num).toDouble(),
+      );
 }
 
 class MensaLabels {
@@ -37,6 +46,22 @@ class MensaLabels {
 
   /// 'A', 'B', 'C', …
   final String? h2oRating;
+
+  Map<String, dynamic> toJson() => {
+        'vegetarian': vegetarian,
+        'vegan': vegan,
+        if (sustainability != null) 'sustainability': sustainability,
+        if (co2Rating != null) 'co2Rating': co2Rating,
+        if (h2oRating != null) 'h2oRating': h2oRating,
+      };
+
+  factory MensaLabels.fromJson(Map<String, dynamic> j) => MensaLabels(
+        vegetarian: (j['vegetarian'] as bool?) ?? false,
+        vegan: (j['vegan'] as bool?) ?? false,
+        sustainability: j['sustainability'] as String?,
+        co2Rating: j['co2Rating'] as String?,
+        h2oRating: j['h2oRating'] as String?,
+      );
 }
 
 class MensaMeal {
@@ -51,6 +76,22 @@ class MensaMeal {
   final MensaPrices? prices;
   final List<String> additives;
   final MensaLabels labels;
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        if (prices != null) 'prices': prices!.toJson(),
+        'additives': additives,
+        'labels': labels.toJson(),
+      };
+
+  factory MensaMeal.fromJson(Map<String, dynamic> j) => MensaMeal(
+        name: j['name'] as String,
+        prices: j['prices'] != null
+            ? MensaPrices.fromJson(j['prices'] as Map<String, dynamic>)
+            : null,
+        additives: (j['additives'] as List<dynamic>).cast<String>(),
+        labels: MensaLabels.fromJson(j['labels'] as Map<String, dynamic>),
+      );
 }
 
 class MensaCategory {
@@ -58,6 +99,18 @@ class MensaCategory {
 
   final String name;
   final List<MensaMeal> meals;
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'meals': meals.map((m) => m.toJson()).toList(),
+      };
+
+  factory MensaCategory.fromJson(Map<String, dynamic> j) => MensaCategory(
+        name: j['name'] as String,
+        meals: (j['meals'] as List<dynamic>)
+            .map((m) => MensaMeal.fromJson(m as Map<String, dynamic>))
+            .toList(),
+      );
 }
 
 class MensaDay {
@@ -80,6 +133,22 @@ class MensaDay {
   final List<MensaCategory> categories;
 
   bool get isEmpty => categories.isEmpty;
+
+  Map<String, dynamic> toJson() => {
+        'date': date,
+        'weekday': weekday,
+        'mensa': mensa,
+        'categories': categories.map((c) => c.toJson()).toList(),
+      };
+
+  factory MensaDay.fromJson(Map<String, dynamic> j) => MensaDay(
+        date: j['date'] as String,
+        weekday: j['weekday'] as String,
+        mensa: j['mensa'] as String,
+        categories: (j['categories'] as List<dynamic>)
+            .map((c) => MensaCategory.fromJson(c as Map<String, dynamic>))
+            .toList(),
+      );
 }
 
 class MensaFetchException implements Exception {

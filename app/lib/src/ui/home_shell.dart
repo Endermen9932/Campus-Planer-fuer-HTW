@@ -11,6 +11,7 @@ import '../theme/theme_controller.dart';
 import 'login_screen.dart';
 import 'settings_screen.dart';
 import 'widgets/shared_widgets.dart';
+import 'widgets/week_calendar.dart';
 
 /// Root-Shell für eingeloggte Nutzer.
 ///
@@ -160,12 +161,20 @@ class _TimetableTab extends StatelessWidget {
   const _TimetableTab({required this.controller});
   final TimetableController controller;
 
+  String _weekLabel() {
+    final days = controller.week.weekdaysMonToFri;
+    final fmt = DateFormat('d. MMM', 'de');
+    return 'KW ${controller.week.week}  ·  '
+        '${fmt.format(days.first)} – ${fmt.format(days.last)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        if (controller.isOffline) const _OfflineBanner(),
         NavigationStrip(
-          label: 'KW ${controller.week.week} · ${controller.week.year}',
+          label: _weekLabel(),
           previousTooltip: 'Vorige Woche',
           nextTooltip: 'Nächste Woche',
           onPrevious: controller.previousWeek,
@@ -198,84 +207,11 @@ class _TimetableTab extends StatelessWidget {
             child: Text('Keine Termine in dieser Woche.'),
           );
         }
-        return _EventList(events: controller.events);
-    }
-  }
-}
-
-class _EventList extends StatelessWidget {
-  const _EventList({required this.events});
-  final List<ICalEvent> events;
-
-  @override
-  Widget build(BuildContext context) {
-    final byDay = <String, List<ICalEvent>>{};
-    final dayFormat = DateFormat('EEEE, d. MMMM', 'de');
-    for (final e in events) {
-      final start = e.start?.localValue;
-      final key = start != null ? dayFormat.format(start) : 'Ohne Datum';
-      byDay.putIfAbsent(key, () => []).add(e);
-    }
-
-    final dayKeys = byDay.keys.toList();
-    return ListView.builder(
-      itemCount: dayKeys.length,
-      itemBuilder: (context, i) {
-        final day = dayKeys[i];
-        final dayEvents = byDay[day]!;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Text(
-                day,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ),
-            ...dayEvents.map((e) => _EventTile(event: e)),
-          ],
+        return WeekCalendarView(
+          week: controller.week,
+          events: controller.events,
         );
-      },
-    );
-  }
-}
-
-class _EventTile extends StatelessWidget {
-  const _EventTile({required this.event});
-  final ICalEvent event;
-
-  @override
-  Widget build(BuildContext context) {
-    final timeFormat = DateFormat('HH:mm');
-    final start = event.start?.localValue;
-    final end   = event.end?.localValue;
-
-    final String time;
-    if (event.start?.dateOnly ?? false) {
-      time = 'ganztägig';
-    } else if (start != null && end != null) {
-      time = '${timeFormat.format(start)} – ${timeFormat.format(end)}';
-    } else if (start != null) {
-      time = timeFormat.format(start);
-    } else {
-      time = '';
     }
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        title: Text(event.summary ?? 'Veranstaltung'),
-        subtitle: Text(
-          [
-            time,
-            if (event.location != null) event.location!,
-          ].where((s) => s.isNotEmpty).join('  ·  '),
-        ),
-      ),
-    );
   }
 }
 
@@ -292,6 +228,7 @@ class _SpeiseplanTab extends StatelessWidget {
     final fmt = DateFormat('EEEE, d. MMMM', 'de');
     return Column(
       children: [
+        if (controller.isOffline) const _OfflineBanner(),
         NavigationStrip(
           label: fmt.format(controller.date),
           previousTooltip: 'Vorheriger Tag',
@@ -484,6 +421,36 @@ class _Chip extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Offline-Banner
+// ---------------------------------------------------------------------------
+
+class _OfflineBanner extends StatelessWidget {
+  const _OfflineBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      color: cs.tertiaryContainer,
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off, size: 14, color: cs.onTertiaryContainer),
+          const SizedBox(width: 6),
+          Text(
+            'Offline – gespeicherte Daten',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: cs.onTertiaryContainer,
+                ),
+          ),
+        ],
       ),
     );
   }
