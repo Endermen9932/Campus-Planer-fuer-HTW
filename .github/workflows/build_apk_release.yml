@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - claude/happy-ritchie-sEbUN
   workflow_dispatch:
 
 env:
@@ -42,14 +41,6 @@ jobs:
       - name: Build Release APK (debug-signed)
         run: cd app && flutter build apk --release
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 5
-          if-no-files-found: error
-
       - name: Read version from pubspec
         id: version
         run: |
@@ -64,7 +55,6 @@ jobs:
           body: |
             Automatisch gebaute APK, signiert mit dem **Android Debug Key**.
 
-            Diese APK ist zum direkten Testen geeignet. Für produktive Nutzung
-            (Play Store) bitte den separaten AAB-Workflow verwenden.
+            Diese APK ist zum direkten Testen geeignet.
           files: app/build/app/outputs/flutter-apk/app-release.apk
           make_latest: true
