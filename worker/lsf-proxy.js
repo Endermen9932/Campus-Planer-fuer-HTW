@@ -1,27 +1,42 @@
 /**
  * Cloudflare Worker: transparenter CORS-Proxy für lsf.htw-berlin.de + www.stw.berlin.
  *
- * Virtuelle Redirects: bei 3xx-Antworten gibt der Worker HTTP 200 zurück,
- * echter Status in X-Proxy-Status, Ziel in X-Proxy-Location.
- * Dart-WebLsfTransport liest X-Proxy-Status und folgt Redirects manuell.
+ * Redirects werden intern verfolgt (gleiche Worker-Instanz = gleiche Cloudflare-Node-IP),
+ * damit LSF POST (Login) und nachfolgenden GET als zusammengehörig erkennt und die
+ * JSESSIONID-Session nicht verliert.
+ * Alle Set-Cookie-Header aller Hops werden gesammelt und über X-Proxy-Set-Cookie
+ * an Dart zurückgegeben.
  *
  * Deploy:  cd worker && npx wrangler deploy
  */
 
 const ALLOW_HOSTS = new Set(['lsf.htw-berlin.de', 'www.stw.berlin']);
+const MAX_REDIRECTS = 10;
 
 const CORS = (origin) => ({
   'Access-Control-Allow-Origin': origin || '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, X-Proxy-Cookie, X-Proxy-UA, Accept',
-  'Access-Control-Expose-Headers': 'X-Proxy-Status, X-Proxy-Set-Cookie, X-Proxy-Location',
+  'Access-Control-Expose-Headers': 'X-Proxy-Status, X-Proxy-Set-Cookie, X-Proxy-Location, X-Debug-Recv-Cookie, X-Debug-Set-Cookie-Keys',
   'Access-Control-Max-Age': '86400',
 });
 
 export default {
   async fetch(request) {
     const origin = request.headers.get('Origin') || '*';
+    try {
+      return await handleRequest(request, origin);
+    } catch (err) {
+      console.error('Unhandled worker error:', err);
+      return new Response('worker error: ' + String(err), {
+        status: 500,
+        headers: CORS(origin),
+      });
+    }
+  },
+};
 
+async function handleRequest(request, origin) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS(origin) });
     }
@@ -43,52 +58,140 @@ export default {
     const fwd = new Headers();
     fwd.set('User-Agent', request.headers.get('X-Proxy-UA') || 'HTW Center/0.1');
     fwd.set('Accept', request.headers.get('Accept') || 'text/html,*/*');
-    const cookie = request.headers.get('X-Proxy-Cookie');
-    if (cookie) fwd.set('Cookie', cookie);
+    const clientCookie = request.headers.get('X-Proxy-Cookie');
+    if (clientCookie) fwd.set('Cookie', clientCookie);
 
-    // fetchOptions ohne body für GET/HEAD (Cloudflare wirft bei body:null + GET)
-    const fetchOptions = { method: request.method, headers: fwd, redirect: 'manual' };
-    if (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') {
-      fetchOptions.body = await request.text();
+    let method = request.method;
+    let body = null;
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+      body = await request.text();
       fwd.set('Content-Type',
         request.headers.get('Content-Type') ||
         'application/x-www-form-urlencoded; charset=utf-8');
     }
 
+    // Redirects intern verfolgen: POST-Login und nachfolgender GET laufen innerhalb
+    // derselben Worker-Invokation auf derselben Cloudflare-Node → LSF sieht dieselbe
+    // Quell-IP für beide Requests → JSESSIONID bleibt gültig.
+    const allSetCookies = [];
+    let currentUrl = t;
+    let currentMethod = method;
+    let currentBody = body;
     let upstream;
+
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const fetchOpts = { method: currentMethod, headers: new Headers(fwd), redirect: 'manual' };
+      if (currentBody !== null && currentMethod !== 'GET' && currentMethod !== 'HEAD') {
+        fetchOpts.body = currentBody;
+      }
+
+      try {
+        upstream = await fetch(currentUrl.toString(), fetchOpts);
+      } catch (err) {
+        return new Response('upstream fetch failed: ' + String(err), {
+          status: 502, headers: CORS(origin),
+        });
+      }
+
+      // Set-Cookie dieses Hops sammeln und für nächsten Hop in Cookie-Header einbauen
+      try {
+        const sc = upstream.headers.getSetCookie
+          ? upstream.headers.getSetCookie()
+          : [upstream.headers.get('set-cookie')].filter(Boolean);
+        for (const raw of sc) {
+          allSetCookies.push(raw);
+          const nameVal = raw.split(';')[0].trim();
+          const eq = nameVal.indexOf('=');
+          if (eq > 0) {
+            const name = nameVal.substring(0, eq);
+            const existing = fwd.get('Cookie') || '';
+            const kept = existing
+              ? existing.split('; ').filter(p => !p.startsWith(name + '='))
+              : [];
+            kept.push(nameVal);
+            fwd.set('Cookie', kept.join('; '));
+          }
+        }
+      } catch (_) { /* getSetCookie nicht verfügbar */ }
+
+      const isRedirect = [301, 302, 303, 307, 308].includes(upstream.status);
+      if (!isRedirect || hop === MAX_REDIRECTS) break;
+
+      const loc = upstream.headers.get('Location');
+      if (!loc) break;
+
+      let nextUrl;
+      try { nextUrl = new URL(loc, currentUrl); } catch (_) { break; }
+
+      // Nicht-erlaubter Host: virtuellen Redirect zurückgeben, Dart entscheidet
+      if (!ALLOW_HOSTS.has(nextUrl.hostname)) {
+        const out = new Headers(CORS(origin));
+        out.set('X-Proxy-Status', String(upstream.status));
+        const pairs = allSetCookies.map(c => c.split(';')[0].trim()).filter(Boolean);
+        if (pairs.length > 0) out.set('X-Proxy-Set-Cookie', pairs.join('; '));
+        out.set('X-Proxy-Location', loc);
+        return new Response(null, { status: 200, headers: out });
+      }
+
+      // 301/302/303: POST → GET (HTTP-Standard)
+      if ([301, 302, 303].includes(upstream.status) && currentMethod === 'POST') {
+        currentMethod = 'GET';
+        currentBody = null;
+        fwd.delete('Content-Type');
+      }
+
+      currentUrl = nextUrl;
+    }
+
+    // Endantwort zusammenstellen: Body komplett puffern statt streamen,
+    // damit Verbindungsfehler beim Lesen des Upstream-Streams als JS-Exception
+    // sichtbar werden (statt als platform-level 500 ohne CORS-Header).
+    let responseBody;
     try {
-      upstream = await fetch(t.toString(), fetchOptions);
+      responseBody = await upstream.arrayBuffer();
     } catch (err) {
-      return new Response('upstream fetch failed: ' + String(err), {
+      return new Response('body read error: ' + String(err), {
         status: 502, headers: CORS(origin),
       });
     }
 
-    // Antwort zusammenstellen
     const out = new Headers(CORS(origin));
     out.set('X-Proxy-Status', String(upstream.status));
+    // Cookies als "name=value; name2=value2" senden.
+    const pairs = allSetCookies.map(c => c.split(';')[0].trim()).filter(Boolean);
+    if (pairs.length > 0) out.set('X-Proxy-Set-Cookie', pairs.join('; '));
+    const ct = upstream.headers.get('Content-Type') || '';
+    if (ct) out.set('Content-Type', ct);
 
-    // Set-Cookie weiterleiten (getSetCookie unterstützt mehrere Header)
-    try {
-      const sc = upstream.headers.getSetCookie
-        ? upstream.headers.getSetCookie()
-        : [upstream.headers.get('set-cookie')].filter(Boolean);
-      if (sc.length > 0) out.set('X-Proxy-Set-Cookie', sc.join('\n'));
-    } catch (_) { /* ignorieren falls getSetCookie nicht verfügbar */ }
+    // Debug: echo back what cookies Dart sent us (truncated) and what we got back.
+    const recvCookie = request.headers.get('X-Proxy-Cookie') || '';
+    out.set('X-Debug-Recv-Cookie', recvCookie.substring(0, 400));
+    out.set('X-Debug-Set-Cookie-Keys', pairs.map(p => p.split('=')[0]).join(', '));
 
-    const isRedirect = upstream.status === 301 || upstream.status === 302 ||
-                       upstream.status === 303 || upstream.status === 307 ||
-                       upstream.status === 308;
-
-    if (isRedirect) {
-      // Virtueller Redirect: 200 zurück, Dart folgt X-Proxy-Location manuell
-      const loc = upstream.headers.get('Location');
-      if (loc) out.set('X-Proxy-Location', loc);
-      return new Response(null, { status: 200, headers: out });
+    // Cookies in HTML-Body als JSON-Kommentar einbetten: Flutter-web BrowserClient
+    // kann benutzerdefinierte CORS-Response-Header nicht lesen, der Body ist
+    // aber immer zugänglich. Dart sucht den Kommentar per indexOf (nicht startsWith),
+    // damit BOM/Whitespace am Anfang kein Problem sind. JSON statt '; '-Format
+    // eliminiert jede Parsing-Ambiguität bei Sonderzeichen in Cookie-Werten.
+    if (ct.toLowerCase().includes('text/html') && pairs.length > 0) {
+      const cookieObj = Object.fromEntries(pairs.map(p => {
+        const eq = p.indexOf('=');
+        return [p.substring(0, eq), p.substring(eq + 1)];
+      }));
+      const cookieComment = `<!--__PROXY_COOKIES__:${JSON.stringify(cookieObj)}-->`;
+      try {
+        const isLatin1 = /charset=(iso-8859-1|latin[- ]?1|iso8859-1)/i.test(ct);
+        const htmlText = new TextDecoder(isLatin1 ? 'iso-8859-1' : 'utf-8').decode(responseBody);
+        responseBody = new TextEncoder().encode(cookieComment + htmlText);
+        // Neu-Encoding ist UTF-8 → Content-Type aktualisieren.
+        out.set('Content-Type', isLatin1
+          ? 'text/html; charset=utf-8'
+          : (ct.includes('charset') ? ct : ct.trimEnd() + '; charset=utf-8'));
+        out.set('X-Debug-Cookie-Injected', '1');
+      } catch (e) {
+        out.set('X-Debug-Cookie-Injected', '0:' + String(e));
+      }
     }
 
-    const ct = upstream.headers.get('Content-Type');
-    if (ct) out.set('Content-Type', ct);
-    return new Response(upstream.body, { status: 200, headers: out });
-  },
-};
+    return new Response(responseBody, { status: 200, headers: out });
+}

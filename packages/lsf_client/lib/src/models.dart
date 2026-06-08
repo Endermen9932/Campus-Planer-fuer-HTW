@@ -79,6 +79,17 @@ class CalendarWeek {
   CalendarWeek get previous =>
       CalendarWeek.fromDate(_thursday.subtract(const Duration(days: 7)));
 
+  /// Montag dieser ISO-Woche als lokales Datum (ohne Uhrzeit).
+  DateTime get monday {
+    final thu = _thursday;
+    return DateTime(thu.year, thu.month, thu.day)
+        .subtract(const Duration(days: 3));
+  }
+
+  /// Alle fünf Wochentage Mo–Fr als lokale Datumsangaben.
+  List<DateTime> get weekdaysMonToFri =>
+      List.generate(5, (i) => monday.add(Duration(days: i)));
+
   @override
   bool operator ==(Object other) =>
       other is CalendarWeek && other.week == week && other.year == year;
@@ -185,6 +196,20 @@ class ICalDateTime {
   /// Gerät in einer anderen Zeitzone) erfordert `package:timezone`.
   DateTime get localValue => isUtc ? value.toLocal() : value;
 
+  Map<String, dynamic> toJson() => {
+        'value': value.toIso8601String(),
+        'isUtc': isUtc,
+        'dateOnly': dateOnly,
+        if (tzid != null) 'tzid': tzid,
+      };
+
+  factory ICalDateTime.fromJson(Map<String, dynamic> json) => ICalDateTime(
+        DateTime.parse(json['value'] as String),
+        isUtc: (json['isUtc'] as bool?) ?? false,
+        dateOnly: (json['dateOnly'] as bool?) ?? false,
+        tzid: json['tzid'] as String?,
+      );
+
   @override
   String toString() =>
       'ICalDateTime($value${isUtc ? 'Z' : ''}${tzid != null ? ' [$tzid]' : ''})';
@@ -212,6 +237,30 @@ class ICalEvent {
 
   /// Roher RRULE-Wert (Wiederholungsregel), falls vorhanden.
   final String? rrule;
+
+  Map<String, dynamic> toJson() => {
+        if (uid != null) 'uid': uid,
+        if (summary != null) 'summary': summary,
+        if (location != null) 'location': location,
+        if (description != null) 'description': description,
+        if (start != null) 'start': start!.toJson(),
+        if (end != null) 'end': end!.toJson(),
+        if (rrule != null) 'rrule': rrule,
+      };
+
+  factory ICalEvent.fromJson(Map<String, dynamic> json) => ICalEvent(
+        uid: json['uid'] as String?,
+        summary: json['summary'] as String?,
+        location: json['location'] as String?,
+        description: json['description'] as String?,
+        start: json['start'] != null
+            ? ICalDateTime.fromJson(json['start'] as Map<String, dynamic>)
+            : null,
+        end: json['end'] != null
+            ? ICalDateTime.fromJson(json['end'] as Map<String, dynamic>)
+            : null,
+        rrule: json['rrule'] as String?,
+      );
 
   @override
   String toString() => 'ICalEvent($summary, $start → $end, $location)';

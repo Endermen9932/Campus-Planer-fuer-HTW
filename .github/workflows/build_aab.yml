@@ -53,4 +53,4 @@ jobs:
         with:
           name: Secure-Release-Package
           path: Secure-Release-Package.zip
-          retention-days: 7
+          retention-days: 3
