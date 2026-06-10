@@ -1,0 +1,40 @@
+name: Cleanup old releases
+
+# Loescht alte Releases (samt Tag) und behaelt nur das neueste.
+# Nuetzlich, weil pro Build ein neues Release/Tag entsteht. Nur manuell ausloesbar.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Alte Releases loeschen (neuestes behalten)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const KEEP = 1;
+            const releases = await github.paginate(
+              github.rest.repos.listReleases, { owner, repo, per_page: 100 }
+            );
+            releases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const toDelete = releases.slice(KEEP);
+            core.info(`${releases.length} Releases gefunden, behalte ${Math.min(KEEP, releases.length)}, loesche ${toDelete.length}`);
+            for (const r of toDelete) {
+              try {
+                await github.rest.repos.deleteRelease({ owner, repo, release_id: r.id });
+                try {
+                  await github.rest.git.deleteRef({ owner, repo, ref: `tags/${r.tag_name}` });
+                } catch (e) {
+                  core.warning(`Tag ${r.tag_name} nicht geloescht: ${e.message}`);
+                }
+                core.info(`Geloescht: ${r.name || r.tag_name}`);
+              } catch (e) {
+                core.warning(`Release ${r.tag_name} nicht geloescht: ${e.message}`);
+              }
+            }
+            core.notice(`${toDelete.length} alte Releases geloescht`);
